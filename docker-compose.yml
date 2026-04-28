@@ -1,0 +1,52 @@
+services:
+  gateway:
+    build:
+      context: .
+      args:
+        APP: gateway
+    container_name: sonoria-gateway
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      USERS_SERVICE_URL: http://users:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - users
+    networks:
+      - sonoria
+
+  users:
+    build:
+      context: .
+      args:
+        APP: users
+    container_name: sonoria-users
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    networks:
+      - sonoria
+
+  front:
+    build:
+      context: .
+      args:
+        APP: front
+    container_name: sonoria-front
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+    ports:
+      - "3002:3002"
+    depends_on:
+      - gateway
+    networks:
+      - sonoria
+
+networks:
+  sonoria:
+    driver: bridge
