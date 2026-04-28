@@ -1,4 +1,4 @@
-const base = require("./index.js");
+const base = require("./base.js");
 
 module.exports = [
   ...base,
@@ -7,6 +7,7 @@ module.exports = [
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/no-floating-promises": "warn",
     },
   },
 ];

@@ -1,47 +1,155 @@
 services:
+  postgres:
+    image: bitnami/postgresql:16
+    container_name: sonoria-postgres
+    environment:
+      POSTGRESQL_DATABASE: sonoria
+      POSTGRESQL_USERNAME: sonoria
+      POSTGRESQL_PASSWORD: sonoria
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/bitnami/postgresql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - sonoria
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonoria -d sonoria"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: bitnami/redis:7
+    container_name: sonoria-redis
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "6379:6379"
+    networks:
+      - sonoria
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    container_name: sonoria-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - sonoria
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc
+    container_name: sonoria-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - sonoria
+    entrypoint: >
+      /bin/sh -c "
+        until mc alias set local http://minio:9000 minioadmin minioadmin; do
+          echo 'waiting for minio...'; sleep 2;
+        done;
+        mc mb local/sonoria-audio --ignore-existing;
+        mc anonymous set download local/sonoria-audio || true;
+        echo 'minio bootstrap complete';
+      "
+    restart: "no"
+
   gateway:
     build:
       context: .
-      args:
-        APP: gateway
+      dockerfile: ./apps/gateway/Dockerfile
     container_name: sonoria-gateway
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      USERS_SERVICE_URL: http://users:3001
+    env_file:
+      - ./apps/gateway/.env
     ports:
       - "3000:3000"
     depends_on:
-      - users
+      redis:
+        condition: service_healthy
     networks:
       - sonoria
 
-  users:
+  user-service:
     build:
       context: .
-      args:
-        APP: users
-    container_name: sonoria-users
-    environment:
-      NODE_ENV: production
-      PORT: 3001
+      dockerfile: ./apps/user-service/Dockerfile
+    container_name: sonoria-user-service
+    env_file:
+      - ./apps/user-service/.env
     ports:
       - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sonoria
+
+  media-service:
+    build:
+      context: .
+      dockerfile: ./apps/media-service/Dockerfile
+    container_name: sonoria-media-service
+    env_file:
+      - ./apps/media-service/.env
+    ports:
+      - "3002:3002"
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - sonoria
+
+  job-runner:
+    build:
+      context: .
+      dockerfile: ./apps/job-runner/Dockerfile
+    container_name: sonoria-job-runner
+    env_file:
+      - ./apps/job-runner/.env
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     networks:
       - sonoria
 
   front:
     build:
       context: .
-      args:
-        APP: front
+      dockerfile: ./apps/front/Dockerfile
     container_name: sonoria-front
-    environment:
-      NODE_ENV: production
-      PORT: 3002
-      NEXT_PUBLIC_API_URL: http://localhost:3000
+    env_file:
+      - ./apps/front/.env
     ports:
-      - "3002:3002"
+      - "3004:3004"
     depends_on:
       - gateway
     networks:
@@ -50,3 +158,7 @@ services:
 networks:
   sonoria:
     driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
