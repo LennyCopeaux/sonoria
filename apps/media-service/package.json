@@ -1,7 +1,7 @@
 {
-  "name": "@sonoria/users",
+  "name": "@sonoria/media-service",
   "version": "0.0.1",
-  "description": "Users microservice",
+  "description": "Media microservice (audio uploads, transcoding triggers)",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
