@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  VISITOR
+  USER
+  SUBSCRIBER
+  ARTIST
+  ADMIN
+}
+
+enum TrackStatus {
+  PENDING
+  PROCESSING
+  READY
+  ERROR
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  artistProfile    ArtistProfile?
+  tracks           Track[]
+  playlists        Playlist[]
+  likes            Like[]
+  followers        Follow[]         @relation("Following")
+  following        Follow[]         @relation("Follower")
+  comments         Comment[]
+  listeningHistory ListeningHistory[]
+  subscription     Subscription?
+
+  @@index([role])
+  @@index([createdAt(sort: Desc)])
+}
+
+model ArtistProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  slug      String   @unique
+  bio       String?
+  linksJson Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks Track[]
+
+  @@index([slug])
+}
+
+model Track {
+  id             String      @id @default(uuid())
+  title          String
+  slug           String      @unique
+  genre          String?
+  tags           String[]
+  duration       Int?
+  audioUrl       String?
+  coverUrl       String?
+  waveformJson   Json?
+  status         TrackStatus @default(PENDING)
+  playCount      Int         @default(0)
+  uploaderId     String
+  artistProfileId String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  uploader        User           @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  artistProfile   ArtistProfile? @relation(fields: [artistProfileId], references: [id], onDelete: SetNull)
+  playlistTracks  PlaylistTrack[]
+  likes           Like[]
+  comments        Comment[]
+  listeningHistory ListeningHistory[]
+
+  @@index([slug])
+  @@index([genre])
+  @@index([status])
+  @@index([uploaderId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Playlist {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?
+  coverUrl    String?
+  isPublic    Boolean  @default(true)
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner  User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tracks PlaylistTrack[]
+
+  @@index([slug])
+  @@index([ownerId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model PlaylistTrack {
+  id         String   @id @default(uuid())
+  playlistId String
+  trackId    String
+  position   Int
+  addedAt    DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track    Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+  @@index([trackId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+  @@index([userId])
+  @@index([trackId])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([trackId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model ListeningHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  trackId   String
+  listenedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([trackId])
+  @@index([listenedAt(sort: Desc)])
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  plan      String
+  status    String   @default("active")
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
