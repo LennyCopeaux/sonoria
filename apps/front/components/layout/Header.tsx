@@ -11,7 +11,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 
 export function Header() {
   const router = useRouter();
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user, role, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const [query, setQuery] = useState("");
 
@@ -45,12 +45,24 @@ export function Header() {
 
         {isLoggedIn && user ? (
           <div className="flex items-center gap-2">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white"
-              title={user.email}
+            {role === "ARTIST" ? (
+              <Link
+                href="/dashboard"
+                className="hidden rounded-lg bg-primary/15 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/25 sm:inline-block"
+              >
+                Publier un titre
+              </Link>
+            ) : null}
+            <span className="hidden text-sm text-zinc-400 md:inline">
+              {user.email}
+            </span>
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:text-white"
             >
-              {user.email.charAt(0).toUpperCase()}
-            </div>
+              Déconnexion
+            </button>
           </div>
         ) : (
           <Link

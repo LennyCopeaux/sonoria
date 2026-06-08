@@ -45,7 +45,7 @@ export default function LoginPage() {
         authRedirect: false,
       });
       setAccessToken(data.access_token);
-      router.push("/library");
+      router.replace("/library");
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message || "Identifiants incorrects");

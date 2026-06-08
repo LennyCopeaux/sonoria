@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch",
+    "dev": "PORT=3004 nest start --watch",
     "start": "node dist/main.js",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",

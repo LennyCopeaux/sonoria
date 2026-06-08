@@ -9,6 +9,10 @@ const mockPrisma = {
     findUnique: vi.fn(),
     create: vi.fn(),
   },
+  artistProfile: {
+    create: vi.fn(),
+  },
+  $transaction: vi.fn(),
 };
 
 const mockRedis = {
@@ -33,6 +37,9 @@ function buildService(): AuthService {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockPrisma.$transaction.mockImplementation(
+    async (fn: (tx: typeof mockPrisma) => Promise<unknown>) => fn(mockPrisma),
+  );
 });
 
 describe('AuthService.register', () => {
@@ -55,6 +62,36 @@ describe('AuthService.register', () => {
     expect(result.refresh_token).toBeDefined();
     expect(result.user.email).toBe('test@example.com');
     expect(mockRedis.setEx).toHaveBeenCalledTimes(2);
+  });
+
+  it('creates artist profile when registering as ARTIST', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue(null);
+    mockPrisma.user.create.mockResolvedValue({
+      id: 'artist-user-1',
+      email: 'artist@example.com',
+      role: Role.ARTIST,
+    });
+    mockPrisma.artistProfile.create.mockResolvedValue({
+      id: 'profile-1',
+      userId: 'artist-user-1',
+      slug: 'artist-name-artist-u',
+    });
+
+    const service = buildService();
+    const result = await service.register({
+      email: 'artist@example.com',
+      password: 'password123',
+      name: 'Artist Name',
+      role: Role.ARTIST,
+    });
+
+    expect(result.user.role).toBe(Role.ARTIST);
+    expect(mockPrisma.artistProfile.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'artist-user-1',
+        slug: expect.stringContaining('artist-name'),
+      }),
+    });
   });
 
   it('throws ConflictException if email already taken', async () => {

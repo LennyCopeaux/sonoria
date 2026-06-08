@@ -18,6 +18,7 @@ import { OptionalUser } from '../auth/decorators/optional-user.decorator';
 import { JwtPayload } from '../auth/types';
 import { InternalGuard } from '../common/guards/internal.guard';
 import { TracksService } from './tracks.service';
+import { ConfirmTrackUploadDto } from './dto/confirm-track-upload.dto';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { InternalUpdateTrackDto } from './dto/internal-update-track.dto';
@@ -78,5 +79,16 @@ export class TracksController {
   @UseGuards(AuthGuard)
   play(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.tracksService.play(id, user);
+  }
+
+  @Post(':id/confirm-upload')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.ARTIST)
+  confirmUpload(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ConfirmTrackUploadDto,
+  ) {
+    return this.tracksService.confirmUpload(id, user, dto.s3Key);
   }
 }

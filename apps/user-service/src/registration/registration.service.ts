@@ -48,11 +48,19 @@ export class RegistrationService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private serviceBaseUrl(): string {
+    return (
+      this.config.get<string>('USER_SERVICE_INTERNAL_URL') ??
+      'http://user-service:3001'
+    );
+  }
+
   private async register(): Promise<void> {
     const gatewayUrl = this.config.getOrThrow<string>('GATEWAY_URL');
+    const baseUrl = this.serviceBaseUrl();
     await axios.post(`${gatewayUrl}/registry/register`, {
       name: 'user-service',
-      internalUrl: 'http://user-service:3001',
+      internalUrl: baseUrl,
       routes: [
         '/auth',
         '/users',
@@ -65,7 +73,7 @@ export class RegistrationService implements OnModuleInit, OnModuleDestroy {
         '/stats',
         '/recommendations',
       ],
-      healthUrl: 'http://user-service:3001/health',
+      healthUrl: `${baseUrl}/health`,
     });
   }
 
