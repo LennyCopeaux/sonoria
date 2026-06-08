@@ -12,6 +12,10 @@ import { ApiError, fetchApi } from "@/lib/api";
 import { setAccessToken } from "@/lib/auth";
 
 const registerSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Nom requis")
+    .max(80, "Nom : 80 caractères maximum"),
   email: z.string().email("Email invalide"),
   password: z.string().min(8, "Mot de passe : 8 caractères minimum"),
   role: z.enum(["USER", "ARTIST"]),
@@ -25,6 +29,7 @@ interface AuthResponse {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<RegisterRole>("USER");
@@ -35,7 +40,7 @@ export default function RegisterPage() {
     event.preventDefault();
     setError(null);
 
-    const parsed = registerSchema.safeParse({ email, password, role });
+    const parsed = registerSchema.safeParse({ name, email, password, role });
     if (!parsed.success) {
       setError(parsed.error.errors[0]?.message ?? "Formulaire invalide");
       return;
@@ -45,7 +50,12 @@ export default function RegisterPage() {
     try {
       const data = await fetchApi<AuthResponse>("/auth/register", {
         method: "POST",
-        body: JSON.stringify(parsed.data),
+        body: JSON.stringify({
+          name: parsed.data.name,
+          email: parsed.data.email,
+          password: parsed.data.password,
+          role: parsed.data.role,
+        }),
         authRedirect: false,
       });
       setAccessToken(data.access_token);
@@ -70,6 +80,14 @@ export default function RegisterPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Input
+            label="Nom"
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            required
+          />
           <Input
             label="Email"
             type="email"

@@ -1,6 +1,6 @@
 import { clearAccessToken, getAccessToken } from "./auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class ApiError extends Error {
   constructor(
@@ -49,8 +49,19 @@ export async function fetchApi<T>(
   }
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new ApiError(message || response.statusText, response.status);
+    const text = await response.text();
+    let message = text || response.statusText;
+    try {
+      const json = JSON.parse(text) as { message?: string | string[] };
+      if (Array.isArray(json.message)) {
+        message = json.message.join(", ");
+      } else if (typeof json.message === "string") {
+        message = json.message;
+      }
+    } catch {
+      // corps non-JSON : on garde le texte brut
+    }
+    throw new ApiError(message, response.status);
   }
 
   if (response.status === 204) {

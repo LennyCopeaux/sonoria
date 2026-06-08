@@ -47,6 +47,17 @@ export class MediaClientService {
     return data.streamUrl;
   }
 
+  async confirmUpload(
+    trackId: string,
+    s3Key: string,
+  ): Promise<{ status: 'queued' }> {
+    const { data } = await axios.post<{ status: 'queued' }>(
+      `${this.baseUrl()}/media/confirm-upload`,
+      { trackId, s3Key },
+    );
+    return data;
+  }
+
   async deleteMedia(trackId: string): Promise<void> {
     await axios.delete(`${this.baseUrl()}/media/${trackId}`);
   }

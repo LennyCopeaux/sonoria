@@ -17,13 +17,13 @@ export function Sidebar() {
   const links = [
     ...baseLinks,
     ...(role === "ARTIST"
-      ? [{ href: "/dashboard", label: "Dashboard" }]
+      ? [{ href: "/dashboard", label: "Publier un titre" }]
       : []),
   ];
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 p-4">
-      <nav className="flex flex-1 flex-col gap-1">
+      <nav className="flex flex-col gap-1">
         {links.map((link) => {
           const isActive =
             link.href === "/"

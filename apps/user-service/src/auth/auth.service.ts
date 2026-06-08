@@ -11,6 +11,7 @@ import { JwtService } from './jwt.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role } from '@prisma/client';
+import { slugify } from '@sonoria/utils';
 
 const REFRESH_TTL = 604800; // 7 days in seconds
 
@@ -42,14 +43,27 @@ export class AuthService {
     }
 
     const passwordHash = await argon2.hash(dto.password);
+    const role = dto.role === Role.ARTIST ? Role.ARTIST : Role.USER;
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        passwordHash,
-        name: dto.name,
-        role: Role.USER,
-      },
+    const user = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: dto.email,
+          passwordHash,
+          name: dto.name,
+          role,
+        },
+      });
+
+      if (role === Role.ARTIST) {
+        const baseSlug = slugify(dto.name) || 'artist';
+        const slug = `${baseSlug}-${created.id.slice(0, 8)}`;
+        await tx.artistProfile.create({
+          data: { userId: created.id, slug },
+        });
+      }
+
+      return created;
     });
 
     const { access_token, refresh_token } = this.generateTokens(user);

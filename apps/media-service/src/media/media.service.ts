@@ -63,10 +63,15 @@ export class MediaService {
       return { streamUrl: cached };
     }
 
-    const key = this.s3.buildTranscodedKey(trackId, quality);
-    const exists = await this.s3.objectExists(key);
-    if (!exists) {
-      throw new NotFoundException('Stream not available for this track');
+    let key = this.s3.buildTranscodedKey(trackId, quality);
+    const transcodedExists = await this.s3.objectExists(key);
+
+    if (!transcodedExists) {
+      const originalKey = await this.s3.findFirstOriginalKey(trackId);
+      if (!originalKey) {
+        throw new NotFoundException('Stream not available for this track');
+      }
+      key = originalKey;
     }
 
     const streamUrl = await this.s3.createPresignedGetUrl(key, STREAM_URL_TTL);

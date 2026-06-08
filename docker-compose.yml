@@ -1,15 +1,15 @@
 services:
   postgres:
-    image: bitnami/postgresql:16
+    image: postgres:16-alpine
     container_name: sonoria-postgres
     environment:
-      POSTGRESQL_DATABASE: sonoria
-      POSTGRESQL_USERNAME: sonoria
-      POSTGRESQL_PASSWORD: sonoria
+      POSTGRES_DB: sonoria
+      POSTGRES_USER: sonoria
+      POSTGRES_PASSWORD: sonoria
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/bitnami/postgresql
+      - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - sonoria
@@ -20,12 +20,10 @@ services:
       retries: 10
 
   redis:
-    image: bitnami/redis:7
+    image: redis:7-alpine
     container_name: sonoria-redis
-    environment:
-      ALLOW_EMPTY_PASSWORD: "yes"
     ports:
-      - "6379:6379"
+      - "6380:6379"  # 6380 côté host pour éviter conflit avec un autre Redis local (ex. la-pioche)
     networks:
       - sonoria
     healthcheck:
@@ -69,6 +67,8 @@ services:
         done;
         mc mb local/sonoria-audio --ignore-existing;
         mc anonymous set download local/sonoria-audio || true;
+        printf '%s' '{"CORSRules":[{"AllowedOrigins":["http://localhost:3002","http://localhost:3010"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"]}]}' > /tmp/cors.json;
+        mc cors set local/sonoria-audio /tmp/cors.json || true;
         echo 'minio bootstrap complete';
       "
     restart: "no"
@@ -81,7 +81,7 @@ services:
     env_file:
       - ./apps/gateway/.env
     ports:
-      - "3000:3000"
+      - "3010:3010"
     depends_on:
       redis:
         condition: service_healthy
@@ -112,8 +112,14 @@ services:
     container_name: sonoria-media-service
     env_file:
       - ./apps/media-service/.env
+    environment:
+      PORT: 3002
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      GATEWAY_URL: http://gateway:3010
+      MEDIA_SERVICE_INTERNAL_URL: http://media-service:3002
     ports:
-      - "3002:3002"
+      - "3004:3002"
     depends_on:
       redis:
         condition: service_healthy

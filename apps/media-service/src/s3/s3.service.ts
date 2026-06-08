@@ -63,6 +63,20 @@ export class S3Service {
     return getSignedUrl(this.client, command, { expiresIn });
   }
 
+  async findFirstOriginalKey(trackId: string): Promise<string | null> {
+    const prefix = `tracks/${trackId}/original/`;
+    const response = await this.client.send(
+      new ListObjectsV2Command({
+        Bucket: this.bucket,
+        Prefix: prefix,
+        MaxKeys: 1,
+      }),
+    );
+
+    const key = response.Contents?.[0]?.Key;
+    return key ?? null;
+  }
+
   async objectExists(key: string): Promise<boolean> {
     try {
       await this.client.send(

@@ -13,7 +13,19 @@ import {
   type JwtPayload,
 } from "@/lib/auth";
 
-function readAuthState() {
+interface AuthState {
+  user: JwtPayload | null;
+  loggedIn: boolean;
+  role: string | null;
+}
+
+const loggedOutState: AuthState = {
+  user: null,
+  loggedIn: false,
+  role: null,
+};
+
+function readAuthState(): AuthState {
   const token = getAccessToken();
   const loggedIn = isLoggedIn();
 
@@ -25,17 +37,21 @@ function readAuthState() {
 }
 
 export function useAuth() {
-  const [revision, setRevision] = useState(0);
+  const [state, setState] = useState<AuthState>(loggedOutState);
+  const [isReady, setIsReady] = useState(false);
 
-  useEffect(() => {
-    const onAuthChange = () => setRevision((value) => value + 1);
-    window.addEventListener(AUTH_CHANGED_EVENT, onAuthChange);
-    return () => window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChange);
+  const refresh = useCallback(() => {
+    setState(readAuthState());
+    setIsReady(true);
   }, []);
 
-  void revision;
+  useEffect(() => {
+    refresh();
 
-  const { user, loggedIn, role } = readAuthState();
+    const onAuthChange = () => refresh();
+    window.addEventListener(AUTH_CHANGED_EVENT, onAuthChange);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChange);
+  }, [refresh]);
 
   const logout = useCallback(async () => {
     try {
@@ -47,14 +63,11 @@ export function useAuth() {
     window.location.href = "/";
   }, []);
 
-  const refresh = useCallback(() => {
-    setRevision((value) => value + 1);
-  }, []);
-
   return {
-    user: user as JwtPayload | null,
-    isLoggedIn: loggedIn,
-    role,
+    user: state.user,
+    isLoggedIn: state.loggedIn,
+    isReady,
+    role: state.role,
     logout,
     refresh,
   };

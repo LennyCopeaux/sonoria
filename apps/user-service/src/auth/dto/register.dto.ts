@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { Role } from '@prisma/client';
+import { IsEmail, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { RegisterDto as RegisterSchema } from '@sonoria/schemas';
 
 export class RegisterDto implements RegisterSchema {
@@ -14,4 +15,8 @@ export class RegisterDto implements RegisterSchema {
   @MinLength(1)
   @MaxLength(80)
   name!: string;
+
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
 }

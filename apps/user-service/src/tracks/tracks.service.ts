@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Prisma, Role, Track, TrackStatus } from '@prisma/client';
 import { randomBytes } from 'crypto';
@@ -30,6 +31,8 @@ export interface TrackResponse {
   createdAt: Date;
   updatedAt: Date;
   streamUrl?: string;
+  likeCount: number;
+  likedByMe?: boolean;
 }
 
 @Injectable()
@@ -42,7 +45,7 @@ export class TracksService {
   async create(
     user: JwtPayload,
     dto: CreateTrackDto,
-  ): Promise<{ trackId: string; uploadUrl: string }> {
+  ): Promise<{ trackId: string; uploadUrl: string; s3Key: string }> {
     const artistProfile = await this.getOrCreateArtistProfile(user.sub);
 
     const slug = await this.generateUniqueSlug(dto.title);
@@ -60,13 +63,38 @@ export class TracksService {
 
     const track = await this.prisma.track.create({ data });
 
-    const { uploadUrl } = await this.mediaClient.getUploadUrl(
-      track.id,
-      dto.filename,
-      dto.mimeType,
-    );
+    try {
+      const { uploadUrl, key } = await this.mediaClient.getUploadUrl(
+        track.id,
+        dto.filename,
+        dto.mimeType,
+      );
 
-    return { trackId: track.id, uploadUrl };
+      return { trackId: track.id, uploadUrl, s3Key: key };
+    } catch {
+      await this.prisma.track.delete({ where: { id: track.id } }).catch(() => undefined);
+      throw new ServiceUnavailableException(
+        'Service média indisponible. Lancez media-service (port 3004), MinIO et Redis.',
+      );
+    }
+  }
+
+  async confirmUpload(
+    id: string,
+    user: JwtPayload,
+    s3Key: string,
+  ): Promise<{ status: 'queued' }> {
+    const track = await this.findTrackOrThrow(id);
+    this.assertOwner(track, user);
+
+    const result = await this.mediaClient.confirmUpload(id, s3Key);
+
+    await this.prisma.track.update({
+      where: { id },
+      data: { status: TrackStatus.READY },
+    });
+
+    return result;
   }
 
   async findAll(
@@ -92,8 +120,20 @@ export class TracksService {
       this.prisma.track.count({ where }),
     ]);
 
+    const trackIds = tracks.map((t) => t.id);
+    const likeCounts = await this.getLikeCounts(trackIds);
+    const likedByUser = await this.getLikedByUser(user?.sub, trackIds);
+
     return {
-      items: tracks.map((t) => this.toResponse(t)),
+      items: tracks.map((t) => {
+        const likeMeta: { likeCount: number; likedByMe?: boolean } = {
+          likeCount: likeCounts.get(t.id) ?? 0,
+        };
+        if (user) {
+          likeMeta.likedByMe = likedByUser.has(t.id);
+        }
+        return this.toResponse(t, undefined, likeMeta);
+      }),
       total,
       page,
       limit,
@@ -105,6 +145,8 @@ export class TracksService {
     const track = await this.findTrackOrThrow(id);
     this.assertCanView(track, user);
 
+    const likeMeta = await this.getLikeMeta(track.id, user?.sub);
+
     if (track.status === TrackStatus.READY) {
       const quality = user?.role === Role.SUBSCRIBER ? 'hq' : 'std';
       const streamUrl = await this.mediaClient.getStreamUrl(
@@ -112,10 +154,10 @@ export class TracksService {
         quality,
         user?.role ?? Role.VISITOR,
       );
-      return this.toResponse(track, streamUrl);
+      return this.toResponse(track, streamUrl, likeMeta);
     }
 
-    return this.toResponse(track);
+    return this.toResponse(track, undefined, likeMeta);
   }
 
   async update(
@@ -299,7 +341,59 @@ export class TracksService {
     throw new NotFoundException('Track not found');
   }
 
-  private toResponse(track: Track, streamUrl?: string): TrackResponse {
+  private async getLikeMeta(
+    trackId: string,
+    userId?: string,
+  ): Promise<{ likeCount: number; likedByMe?: boolean }> {
+    const [likeCount, userLike] = await Promise.all([
+      this.prisma.like.count({ where: { trackId } }),
+      userId
+        ? this.prisma.like.findUnique({
+            where: { userId_trackId: { userId, trackId } },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    const meta: { likeCount: number; likedByMe?: boolean } = { likeCount };
+    if (userId) {
+      meta.likedByMe = userLike !== null;
+    }
+    return meta;
+  }
+
+  private async getLikeCounts(
+    trackIds: string[],
+  ): Promise<Map<string, number>> {
+    if (trackIds.length === 0) return new Map();
+
+    const rows = await this.prisma.like.groupBy({
+      by: ['trackId'],
+      where: { trackId: { in: trackIds } },
+      _count: { trackId: true },
+    });
+
+    return new Map(rows.map((r) => [r.trackId, r._count.trackId]));
+  }
+
+  private async getLikedByUser(
+    userId: string | undefined,
+    trackIds: string[],
+  ): Promise<Set<string>> {
+    if (!userId || trackIds.length === 0) return new Set();
+
+    const likes = await this.prisma.like.findMany({
+      where: { userId, trackId: { in: trackIds } },
+      select: { trackId: true },
+    });
+
+    return new Set(likes.map((l) => l.trackId));
+  }
+
+  private toResponse(
+    track: Track,
+    streamUrl?: string,
+    likeMeta?: { likeCount: number; likedByMe?: boolean },
+  ): TrackResponse {
     const response: TrackResponse = {
       id: track.id,
       title: track.title,
@@ -315,10 +409,15 @@ export class TracksService {
       waveformJson: track.waveformJson,
       createdAt: track.createdAt,
       updatedAt: track.updatedAt,
+      likeCount: likeMeta?.likeCount ?? 0,
     };
 
     if (streamUrl !== undefined) {
       response.streamUrl = streamUrl;
+    }
+
+    if (likeMeta?.likedByMe !== undefined) {
+      response.likedByMe = likeMeta.likedByMe;
     }
 
     return response;

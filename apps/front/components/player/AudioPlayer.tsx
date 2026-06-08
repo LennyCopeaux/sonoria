@@ -16,6 +16,7 @@ export function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
 
   const {
     currentTrack,
@@ -53,12 +54,17 @@ export function AudioPlayer() {
     const audio = audioRef.current;
     if (!audio || !currentTrack?.streamUrl) return;
 
+    setPlaybackError(null);
     audio.src = currentTrack.streamUrl;
     setProgress(0);
     setDuration(currentTrack.durationS ?? 0);
+    audio.load();
 
     if (isPlaying) {
-      void audio.play().catch(() => pause());
+      void audio.play().catch(() => {
+        setPlaybackError("Lecture impossible — fichier audio introuvable ou format non supporté.");
+        pause();
+      });
     }
   }, [currentTrack?.id, currentTrack?.streamUrl, currentTrack?.durationS, isPlaying, pause]);
 
@@ -69,17 +75,23 @@ export function AudioPlayer() {
     const handleTimeUpdate = () => setProgress(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
     const handleEnded = () => next();
+    const handleError = () => {
+      setPlaybackError("Erreur de lecture audio.");
+      pause();
+    };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
     };
-  }, [next]);
+  }, [next, pause]);
 
   const handleSeek = (value: number) => {
     const audio = audioRef.current;
@@ -92,7 +104,7 @@ export function AudioPlayer() {
     return (
       <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 px-6 py-3 backdrop-blur">
         <p className="text-center text-sm text-zinc-500">
-          Aucune piste en lecture
+          {playbackError ?? "Aucune piste en lecture"}
         </p>
         <audio ref={audioRef} className="hidden" />
       </footer>
@@ -126,7 +138,7 @@ export function AudioPlayer() {
               {currentTrack.title}
             </p>
             <p className="truncate text-xs text-zinc-400">
-              {currentTrack.artist}
+              {playbackError ?? currentTrack.artist}
             </p>
           </div>
         </div>
