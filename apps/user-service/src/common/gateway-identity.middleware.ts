@@ -37,14 +37,13 @@ export class GatewayIdentityMiddleware implements NestMiddleware {
       if (
         typeof userId === 'string' &&
         typeof userEmail === 'string' &&
-        typeof userRole === 'string' &&
-        typeof userJti === 'string'
+        typeof userRole === 'string'
       ) {
         const payload: JwtPayload = {
           sub: userId,
           email: userEmail,
           role: userRole as Role,
-          jti: userJti,
+          jti: typeof userJti === 'string' ? userJti : '',
         };
 
         if (typeof userExp === 'string') {

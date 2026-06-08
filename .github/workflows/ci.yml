@@ -54,7 +54,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r test
+      - run: pnpm -r test && pnpm -r test:e2e
 
   build:
     name: Build

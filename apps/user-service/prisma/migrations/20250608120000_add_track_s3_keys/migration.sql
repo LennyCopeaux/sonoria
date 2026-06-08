@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Track" ADD COLUMN "s3KeyStd" TEXT;
+ALTER TABLE "Track" ADD COLUMN "s3KeyHq" TEXT;

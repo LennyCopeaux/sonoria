@@ -1,25 +1,18 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { execSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import { generateKeyPairSync } from 'node:crypto';
 import { JwtService } from './jwt.service';
 
 function generateTestKeys(): { privateKeyB64: string; publicKeyB64: string } {
-  const tmpDir = os.tmpdir();
-  const privPath = path.join(tmpDir, `test-private-${Date.now()}.pem`);
-  const pubPath = path.join(tmpDir, `test-public-${Date.now()}.pem`);
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  });
 
-  execSync(`openssl genrsa -out "${privPath}" 2048 2>/dev/null`);
-  execSync(`openssl rsa -in "${privPath}" -pubout -out "${pubPath}" 2>/dev/null`);
-
-  const privateKeyB64 = Buffer.from(fs.readFileSync(privPath)).toString('base64');
-  const publicKeyB64 = Buffer.from(fs.readFileSync(pubPath)).toString('base64');
-
-  fs.unlinkSync(privPath);
-  fs.unlinkSync(pubPath);
-
-  return { privateKeyB64, publicKeyB64 };
+  return {
+    privateKeyB64: Buffer.from(privateKey).toString('base64'),
+    publicKeyB64: Buffer.from(publicKey).toString('base64'),
+  };
 }
 
 describe('JwtService', () => {
@@ -36,7 +29,7 @@ describe('JwtService', () => {
     const token = service.sign({
       sub: 'user-123',
       email: 'test@example.com',
-      role: 'USER' as never,
+      role: 'USER',
     });
 
     expect(typeof token).toBe('string');
@@ -48,14 +41,11 @@ describe('JwtService', () => {
     expect(payload.jti).toBeDefined();
   });
 
-  it('rejects expired token', async () => {
-    // We cannot easily generate an expired token without manipulating time,
-    // so we verify that an obviously invalid token is rejected.
+  it('rejects invalid token', () => {
     expect(() => service.verify('invalid.token.here')).toThrow();
   });
 
   it('rejects token signed with wrong key', () => {
-    // Generate a second key pair and sign with it
     const { privateKeyB64: altPriv, publicKeyB64: altPub } = generateTestKeys();
     process.env['JWT_PRIVATE_KEY'] = altPriv;
     process.env['JWT_PUBLIC_KEY'] = altPub;
@@ -64,10 +54,9 @@ describe('JwtService', () => {
     const tokenFromAlt = altService.sign({
       sub: 'user-456',
       email: 'other@example.com',
-      role: 'USER' as never,
+      role: 'USER',
     });
 
-    // Restore original keys on service
     expect(() => service.verify(tokenFromAlt)).toThrow();
   });
 });
