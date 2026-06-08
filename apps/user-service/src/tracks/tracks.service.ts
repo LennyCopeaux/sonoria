@@ -106,8 +106,7 @@ export class TracksService {
     this.assertCanView(track, user);
 
     if (track.status === TrackStatus.READY) {
-      const quality =
-        user?.role === Role.SUBSCRIBER ? 'hq' : 'std';
+      const quality = user?.role === Role.SUBSCRIBER ? 'hq' : 'std';
       const streamUrl = await this.mediaClient.getStreamUrl(
         track.id,
         quality,
@@ -203,10 +202,7 @@ export class TracksService {
     limit: number;
     totalPages: number;
   }> {
-    return this.findAll(
-      { ...query, artistId: artistProfileId },
-      user,
-    );
+    return this.findAll({ ...query, artistId: artistProfileId }, user);
   }
 
   private async buildListWhere(
@@ -296,10 +292,7 @@ export class TracksService {
       throw new NotFoundException('Track not found');
     }
 
-    if (
-      user.role === Role.ADMIN ||
-      track.uploaderId === user.sub
-    ) {
+    if (user.role === Role.ADMIN || track.uploaderId === user.sub) {
       return;
     }
 

@@ -34,9 +34,7 @@ export class MediaService {
     return { uploadUrl, key };
   }
 
-  async confirmUpload(
-    dto: ConfirmUploadDto,
-  ): Promise<{ status: 'queued' }> {
+  async confirmUpload(dto: ConfirmUploadDto): Promise<{ status: 'queued' }> {
     const exists = await this.s3.objectExists(dto.s3Key);
     if (!exists) {
       throw new NotFoundException('Uploaded file not found in storage');

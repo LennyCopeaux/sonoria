@@ -82,20 +82,17 @@ describe('TracksService.findAll', () => {
     const service = buildService();
     await service.findAll({}, visitorUser);
 
-    expect(mockPrisma.track.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ status: TrackStatus.READY }),
-      }),
-    );
+    const findManyArgs = mockPrisma.track.findMany.mock.calls[0]?.[0] as {
+      where: { status: TrackStatus };
+    };
+    expect(findManyArgs.where.status).toBe(TrackStatus.READY);
   });
 });
 
 describe('TracksService.play', () => {
   it('increments playCount and creates history', async () => {
     mockPrisma.track.findUnique.mockResolvedValue(mockTrack);
-    mockPrisma.$transaction.mockResolvedValue([
-      { ...mockTrack, playCount: 1 },
-    ]);
+    mockPrisma.$transaction.mockResolvedValue([{ ...mockTrack, playCount: 1 }]);
 
     const service = buildService();
     const result = await service.play('track-1', visitorUser);
@@ -161,7 +158,10 @@ describe('TracksService.create', () => {
       slug: 'artist',
     });
     mockPrisma.track.findUnique.mockResolvedValue(null);
-    mockPrisma.track.create.mockResolvedValue({ ...mockTrack, id: 'new-track' });
+    mockPrisma.track.create.mockResolvedValue({
+      ...mockTrack,
+      id: 'new-track',
+    });
     mockMediaClient.getUploadUrl.mockResolvedValue({
       uploadUrl: 'https://minio/upload',
       key: 'tracks/new-track/original/file.mp3',

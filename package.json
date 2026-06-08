@@ -10,7 +10,7 @@
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && pnpm -r test:e2e",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm -r exec rm -rf dist .next .turbo node_modules"

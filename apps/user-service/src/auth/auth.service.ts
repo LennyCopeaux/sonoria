@@ -52,7 +52,7 @@ export class AuthService {
       },
     });
 
-    const { access_token, refresh_token } = await this.generateTokens(user);
+    const { access_token, refresh_token } = this.generateTokens(user);
 
     await this.storeRefreshToken(user.id, refresh_token);
 
@@ -77,7 +77,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { access_token, refresh_token } = await this.generateTokens(user);
+    const { access_token, refresh_token } = this.generateTokens(user);
 
     await this.storeRefreshToken(user.id, refresh_token);
 
@@ -88,10 +88,10 @@ export class AuthService {
     };
   }
 
-  async refresh(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
-    const userId = await this.redis.get(
-      `auth:refresh:reverse:${refreshToken}`,
-    );
+  async refresh(
+    refreshToken: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    const userId = await this.redis.get(`auth:refresh:reverse:${refreshToken}`);
 
     if (!userId) {
       throw new UnauthorizedException('Invalid or expired refresh token');
@@ -106,7 +106,7 @@ export class AuthService {
     const oldToken = await this.redis.get(`auth:refresh:${userId}`);
 
     const { access_token, refresh_token: newRefreshToken } =
-      await this.generateTokens(user);
+      this.generateTokens(user);
 
     // Clean up old tokens
     if (oldToken) {
@@ -144,11 +144,10 @@ export class AuthService {
     }
   }
 
-  private generateTokens(user: {
-    id: string;
-    email: string;
-    role: Role;
-  }): { access_token: string; refresh_token: string } {
+  private generateTokens(user: { id: string; email: string; role: Role }): {
+    access_token: string;
+    refresh_token: string;
+  } {
     const access_token = this.jwtService.sign({
       sub: user.id,
       email: user.email,

@@ -30,10 +30,7 @@ export class TracksController {
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.ARTIST)
-  create(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: CreateTrackDto,
-  ) {
+  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateTrackDto) {
     return this.tracksService.create(user, dto);
   }
 
@@ -55,10 +52,7 @@ export class TracksController {
 
   @Patch(':id/internal')
   @UseGuards(InternalGuard)
-  internalUpdate(
-    @Param('id') id: string,
-    @Body() dto: InternalUpdateTrackDto,
-  ) {
+  internalUpdate(@Param('id') id: string, @Body() dto: InternalUpdateTrackDto) {
     return this.tracksService.internalUpdate(id, dto);
   }
 

@@ -78,9 +78,9 @@ describe('MediaService.confirmUpload', () => {
 describe('MediaService.getStreamUrl', () => {
   it('rejects hq for non-subscribers', async () => {
     const service = buildService();
-    await expect(
-      service.getStreamUrl('t1', 'hq', 'USER'),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(service.getStreamUrl('t1', 'hq', 'USER')).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('returns cached stream URL', async () => {
