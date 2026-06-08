@@ -1,15 +1,15 @@
 services:
   postgres:
-    image: bitnami/postgresql:16
+    image: postgres:16-alpine
     container_name: sonoria-postgres
     environment:
-      POSTGRESQL_DATABASE: sonoria
-      POSTGRESQL_USERNAME: sonoria
-      POSTGRESQL_PASSWORD: sonoria
+      POSTGRES_DB: sonoria
+      POSTGRES_USER: sonoria
+      POSTGRES_PASSWORD: sonoria
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/bitnami/postgresql
+      - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - sonoria
@@ -20,10 +20,8 @@ services:
       retries: 10
 
   redis:
-    image: bitnami/redis:7
+    image: redis:7-alpine
     container_name: sonoria-redis
-    environment:
-      ALLOW_EMPTY_PASSWORD: "yes"
     ports:
       - "6379:6379"
     networks:

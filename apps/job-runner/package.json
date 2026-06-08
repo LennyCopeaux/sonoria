@@ -29,6 +29,7 @@
     "@prisma/client": "^6.0.0",
     "@sonoria/utils": "workspace:*",
     "axios": "^1.7.0",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "bullmq": "^5.40.0",
     "ioredis": "^5.4.1",
     "joi": "^17.13.0",

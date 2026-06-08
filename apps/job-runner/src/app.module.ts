@@ -1,9 +1,12 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { parseEnabledQueues } from './config/queues.config';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProcessorsModule } from './processors/processors.module';
 import { RedisModule } from './redis/redis.module';
 import { S3Module } from './s3/s3.module';
 import { UserClientModule } from './user-client/user-client.module';
@@ -36,12 +39,23 @@ import { UserClientModule } from './user-client/user-client.module';
         SMTP_PORT: Joi.number().default(1025),
         SMTP_USER: Joi.string().allow('').default(''),
         SMTP_PASS: Joi.string().allow('').default(''),
+        FFMPEG_PATH: Joi.string().allow('').default(''),
+      }),
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          url: config.getOrThrow<string>('REDIS_URL'),
+        },
       }),
     }),
     PrismaModule,
     RedisModule,
     S3Module,
     UserClientModule,
+    ProcessorsModule.register(parseEnabledQueues(process.env['QUEUES'])),
   ],
   controllers: [AppController],
   providers: [AppService],
