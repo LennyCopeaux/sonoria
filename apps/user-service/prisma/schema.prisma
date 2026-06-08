@@ -70,6 +70,8 @@ model Track {
   duration       Int?
   audioUrl       String?
   coverUrl       String?
+  s3KeyStd       String?
+  s3KeyHq        String?
   waveformJson   Json?
   status         TrackStatus @default(PENDING)
   playCount      Int         @default(0)
