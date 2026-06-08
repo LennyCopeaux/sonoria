@@ -5,7 +5,7 @@ export class AppService implements OnModuleInit {
   private readonly logger = new Logger(AppService.name);
 
   onModuleInit() {
-    this.logger.log('Job runner online — workers will be registered here.');
+    this.logger.log('Job runner online — processors will be registered next.');
   }
 
   getHealth(): { status: string; service: string } {

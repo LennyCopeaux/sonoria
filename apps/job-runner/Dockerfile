@@ -5,8 +5,8 @@ WORKDIR /app
 FROM base AS builder
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @sonoria/schemas build \
- && pnpm --filter @sonoria/utils build \
+RUN pnpm --filter @sonoria/user-service prisma:generate
+RUN pnpm --filter @sonoria/utils build \
  && pnpm --filter @sonoria/job-runner build
 
 FROM base AS runner
