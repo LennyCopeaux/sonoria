@@ -13,7 +13,9 @@
     "test": "pnpm -r test && pnpm -r test:e2e",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "clean": "pnpm -r exec rm -rf dist .next .turbo node_modules"
+    "clean": "pnpm -r exec rm -rf dist .next .turbo node_modules",
+    "setup:dev-env": "node scripts/setup-dev-env.mjs",
+    "e2e:transcode": "node scripts/e2e-transcode.mjs"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
