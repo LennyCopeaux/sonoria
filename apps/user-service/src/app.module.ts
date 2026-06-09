@@ -13,6 +13,8 @@ import { HealthModule } from './health/health.module';
 import { RegistrationModule } from './registration/registration.module';
 import { CommonModule } from './common/common.module';
 import { TracksModule } from './tracks/tracks.module';
+import { StatsModule } from './stats/stats.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
 import { GatewayIdentityMiddleware } from './common/gateway-identity.middleware';
 
 @Module({
@@ -40,6 +42,8 @@ import { GatewayIdentityMiddleware } from './common/gateway-identity.middleware'
     RegistrationModule,
     CommonModule,
     TracksModule,
+    StatsModule,
+    RecommendationsModule,
   ],
 })
 export class AppModule implements NestModule {
