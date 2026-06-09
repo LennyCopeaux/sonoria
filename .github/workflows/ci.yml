@@ -24,6 +24,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @sonoria/user-service prisma:generate
+      - run: pnpm --filter @sonoria/schemas --filter @sonoria/utils build
       - run: pnpm -r lint
 
   typecheck:
@@ -39,6 +41,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @sonoria/user-service prisma:generate
+      - run: pnpm --filter @sonoria/schemas --filter @sonoria/utils build
       - run: pnpm -r typecheck
 
   test:
@@ -54,6 +58,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @sonoria/user-service prisma:generate
+      - run: pnpm --filter @sonoria/schemas --filter @sonoria/utils build
       - run: pnpm -r test && pnpm -r test:e2e
 
   build:
@@ -69,4 +75,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @sonoria/user-service prisma:generate
+      - run: pnpm --filter @sonoria/schemas --filter @sonoria/utils build
       - run: pnpm -r build

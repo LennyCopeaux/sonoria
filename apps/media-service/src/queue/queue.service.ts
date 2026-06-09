@@ -26,7 +26,11 @@ export class QueueService implements OnModuleDestroy {
   }
 
   async enqueueTranscode(data: TranscodeJobData): Promise<void> {
-    await this.queue.add('audio:transcode', data);
+    await this.queue.add('audio:transcode', data, {
+      jobId: `transcode-${data.trackId}`,
+      removeOnComplete: true,
+      removeOnFail: false,
+    });
   }
 
   async onModuleDestroy(): Promise<void> {

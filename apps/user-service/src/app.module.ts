@@ -16,6 +16,8 @@ import { TracksModule } from './tracks/tracks.module';
 import { SocialModule } from './social/social.module';
 import { PlaylistsModule } from './playlists/playlists.module';
 import { SearchModule } from './search/search.module';
+import { StatsModule } from './stats/stats.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
 import { GatewayIdentityMiddleware } from './common/gateway-identity.middleware';
 
 @Module({
@@ -46,6 +48,8 @@ import { GatewayIdentityMiddleware } from './common/gateway-identity.middleware'
     SocialModule,
     PlaylistsModule,
     SearchModule,
+    StatsModule,
+    RecommendationsModule,
   ],
 })
 export class AppModule implements NestModule {
