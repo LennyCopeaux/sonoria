@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProcessorsModule } from './processors/processors.module';
 import { RedisModule } from './redis/redis.module';
 import { S3Module } from './s3/s3.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 import { UserClientModule } from './user-client/user-client.module';
 
 @Module({
@@ -56,6 +57,7 @@ import { UserClientModule } from './user-client/user-client.module';
     S3Module,
     UserClientModule,
     ProcessorsModule.register(parseEnabledQueues(process.env['QUEUES'])),
+    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

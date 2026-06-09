@@ -22,6 +22,20 @@ pnpm e2e:transcode
 
 Prérequis : stack Docker ci-dessus en cours d'exécution.
 
+## Processors
+
+Queue `media-processing` (toggle via `QUEUES`) :
+
+| Job | Rôle |
+|-----|------|
+| `audio:transcode` | FFmpeg std/hq + waveform |
+| `notification:email` | Emails (welcome, follower, comment…) |
+| `stats:aggregate` | Stats artiste → Redis `artist:stats:{id}` |
+| `reco:refresh` | Recommandations → Redis `reco:{userId}` |
+| `cache:invalidate` | `DEL` clé Redis |
+
+Crons : stats chaque heure, reco à 3h (locks Redis NX).
+
 ## Tests unitaires
 
 ```bash
