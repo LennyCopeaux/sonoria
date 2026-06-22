@@ -46,20 +46,10 @@ export class RecoService {
 
     const following = await this.prisma.follow.findMany({
       where: { followerId: data.userId },
-      select: { followingId: true },
+      select: { artistId: true },
     });
 
-    const followedUserIds = following.map((f) => f.followingId);
-
-    const followedProfiles =
-      followedUserIds.length === 0
-        ? []
-        : await this.prisma.artistProfile.findMany({
-            where: { userId: { in: followedUserIds } },
-            select: { id: true },
-          });
-
-    const followedArtistIds = followedProfiles.map((p) => p.id);
+    const followedArtistIds = following.map((f) => f.artistId);
 
     const filters = [];
     if (followedArtistIds.length > 0) {

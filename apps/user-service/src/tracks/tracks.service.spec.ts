@@ -57,6 +57,10 @@ const mockPrisma = {
   listeningHistory: {
     create: vi.fn(),
   },
+  like: {
+    groupBy: vi.fn().mockResolvedValue([]),
+    findMany: vi.fn().mockResolvedValue([]),
+  },
   $transaction: vi.fn(),
 };
 
