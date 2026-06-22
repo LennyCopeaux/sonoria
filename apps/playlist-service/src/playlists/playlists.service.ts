@@ -12,7 +12,7 @@ import {
   AddPlaylistTrackDto,
   CreatePlaylistDto,
   UpdatePlaylistDto,
-} from '../social/dto/social.dto';
+} from './dto/playlist.dto';
 
 const TRACK_SELECT = {
   id: true,

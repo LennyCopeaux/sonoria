@@ -50,6 +50,8 @@ writeEnv("user-service", {
   JWT_PUBLIC_KEY: publicKey,
 });
 writeEnv("media-service", {});
+writeEnv("social-service", {});
+writeEnv("playlist-service", {});
 writeEnv("job-runner", {});
 
 // front optional for e2e transcode

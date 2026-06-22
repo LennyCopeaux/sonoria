@@ -43,7 +43,9 @@ export class LikesService {
   }
 
   private async ensureTrackExists(trackId: string): Promise<void> {
-    const track = await this.prisma.track.findUnique({ where: { id: trackId } });
+    const track = await this.prisma.track.findUnique({
+      where: { id: trackId },
+    });
     if (!track) {
       throw new NotFoundException('Track not found');
     }
@@ -205,7 +207,9 @@ export class CommentsService {
   ) {}
 
   async createComment(userId: string, trackId: string, dto: CreateCommentDto) {
-    const track = await this.prisma.track.findUnique({ where: { id: trackId } });
+    const track = await this.prisma.track.findUnique({
+      where: { id: trackId },
+    });
 
     if (!track) {
       throw new NotFoundException('Track not found');
@@ -249,7 +253,9 @@ export class CommentsService {
   }
 
   async listComments(trackId: string, page?: number, limit?: number) {
-    const track = await this.prisma.track.findUnique({ where: { id: trackId } });
+    const track = await this.prisma.track.findUnique({
+      where: { id: trackId },
+    });
 
     if (!track) {
       throw new NotFoundException('Track not found');

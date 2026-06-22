@@ -21,7 +21,7 @@ import {
   CreatePlaylistDto,
   PaginationQueryDto,
   UpdatePlaylistDto,
-} from '../social/dto/social.dto';
+} from './dto/playlist.dto';
 
 interface RequestWithUser extends Request {
   user?: JwtPayload;
