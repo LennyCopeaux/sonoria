@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { fetchApi } from "@/lib/api";
+import { fetchApi, refreshSession } from "@/lib/api";
 import {
   AUTH_CHANGED_EVENT,
   clearAccessToken,
@@ -46,7 +46,14 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
-    refresh();
+    // If the cookie is present but the JWT has expired, try a silent refresh
+    // before settling the auth state (keeps the session alive across reloads).
+    const token = getAccessToken();
+    if (token && !isLoggedIn()) {
+      void refreshSession().then(() => refresh());
+    } else {
+      refresh();
+    }
 
     const onAuthChange = () => refresh();
     window.addEventListener(AUTH_CHANGED_EVENT, onAuthChange);
@@ -55,12 +62,12 @@ export function useAuth() {
 
   const logout = useCallback(async () => {
     try {
-      await fetchApi("/auth/logout", { method: "POST" });
+      await fetchApi("/auth/logout", { method: "POST", authRedirect: false });
     } catch {
-      clearAccessToken();
+      // ignore — we clear locally regardless
     }
-
-    window.location.href = "/";
+    clearAccessToken();
+    window.location.href = "/auth/login";
   }, []);
 
   return {

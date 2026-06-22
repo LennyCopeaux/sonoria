@@ -1,4 +1,4 @@
-import { clearAccessToken, getAccessToken } from "./auth";
+import { clearAccessToken, getAccessToken, setAccessToken } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -16,9 +16,38 @@ interface FetchApiOptions extends RequestInit {
   authRedirect?: boolean;
 }
 
+// De-duplicate concurrent refreshes: if several requests 401 at once, they all
+// await the same /auth/refresh call instead of hammering the endpoint.
+let refreshPromise: Promise<boolean> | null = null;
+
+export async function refreshSession(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+        if (!res.ok) return false;
+        const data = (await res.json()) as { access_token?: string };
+        if (!data.access_token) return false;
+        setAccessToken(data.access_token);
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+    void refreshPromise.finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
 export async function fetchApi<T>(
   path: string,
   options: FetchApiOptions = {},
+  retried = false,
 ): Promise<T> {
   const { authRedirect = true, ...requestOptions } = options;
   const token = getAccessToken();
@@ -39,7 +68,17 @@ export async function fetchApi<T>(
   });
 
   if (response.status === 401) {
-    if (authRedirect) {
+    const isAuthCall = path.startsWith("/auth/");
+
+    // Try a silent refresh once, then replay the original request.
+    if (!isAuthCall && !retried) {
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        return fetchApi<T>(path, options, true);
+      }
+    }
+
+    if (authRedirect && !isAuthCall) {
       clearAccessToken();
       if (typeof window !== "undefined") {
         window.location.href = "/auth/login";
