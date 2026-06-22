@@ -1,17 +1,12 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { OptionalUser } from '../auth/decorators/optional-user.decorator';
-import { JwtPayload } from '../auth/types';
+import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { StatsService } from './stats.service';
 
-@Controller('stats')
+@Controller('artists')
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}
 
-  @Get('artists/:artistProfileId')
-  getArtistStats(
-    @Param('artistProfileId') artistProfileId: string,
-    @OptionalUser() user: JwtPayload | undefined,
-  ) {
-    return this.statsService.getArtistStats(artistProfileId, user);
+  @Get(':id/stats')
+  getArtistStats(@Param('id', ParseUUIDPipe) artistProfileId: string) {
+    return this.statsService.getArtistStats(artistProfileId);
   }
 }

@@ -18,6 +18,7 @@ import { PlaylistsModule } from './playlists/playlists.module';
 import { SearchModule } from './search/search.module';
 import { StatsModule } from './stats/stats.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 import { GatewayIdentityMiddleware } from './common/gateway-identity.middleware';
 
 @Module({
@@ -33,6 +34,7 @@ import { GatewayIdentityMiddleware } from './common/gateway-identity.middleware'
         GATEWAY_URL: Joi.string().required(),
         INTERNAL_API_TOKEN: Joi.string().required(),
         MEDIA_SERVICE_URL: Joi.string().required(),
+        JOB_QUEUE_NAME: Joi.string().default('media-processing'),
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test')
           .default('development'),
@@ -50,6 +52,7 @@ import { GatewayIdentityMiddleware } from './common/gateway-identity.middleware'
     SearchModule,
     StatsModule,
     RecommendationsModule,
+    SubscriptionModule,
   ],
 })
 export class AppModule implements NestModule {
