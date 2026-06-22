@@ -33,7 +33,7 @@ export function useNotifications() {
     const fetchNotifications = async () => {
       try {
         const data = await fetchApi<NotificationsResponse>(
-          "/notifications/unread",
+          "/social/notifications/unread",
         );
         if (!cancelled) {
           setNotifications(data.notifications);

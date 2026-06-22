@@ -41,7 +41,7 @@ export default function TrackPage() {
   }, [load]);
 
   const toggleLike = async () => {
-    const res = await fetchApi<LikeResponse>(`/tracks/${trackId}/like`, {
+    const res = await fetchApi<LikeResponse>(`/social/tracks/${trackId}/like`, {
       method: liked ? "DELETE" : "POST",
     });
     setLiked(res.liked);

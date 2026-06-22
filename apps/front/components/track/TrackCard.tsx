@@ -30,7 +30,7 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
   const handleLike = async () => {
     setLoading(true);
     try {
-      const res = await fetchApi<LikeResponse>(`/tracks/${track.id}/like`, {
+      const res = await fetchApi<LikeResponse>(`/social/tracks/${track.id}/like`, {
         method: liked ? "DELETE" : "POST",
       });
       setLiked(res.liked);
