@@ -12,7 +12,9 @@ export class SlugService {
     let suffix = 1;
 
     while (true) {
-      const existing = await this.prisma.playlist.findUnique({ where: { slug } });
+      const existing = await this.prisma.playlist.findUnique({
+        where: { slug },
+      });
       if (!existing || existing.id === excludeId) {
         return slug;
       }

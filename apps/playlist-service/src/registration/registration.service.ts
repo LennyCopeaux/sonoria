@@ -27,6 +27,13 @@ export class RegistrationService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private serviceBaseUrl(): string {
+    return (
+      this.config.get<string>('PLAYLIST_SERVICE_INTERNAL_URL') ??
+      'http://playlist-service:3006'
+    );
+  }
+
   private async registerWithRetry(): Promise<void> {
     const delays = [2000, 4000, 8000, 16000, 32000];
     for (let attempt = 0; attempt <= delays.length; attempt++) {
@@ -48,29 +55,13 @@ export class RegistrationService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private serviceBaseUrl(): string {
-    return (
-      this.config.get<string>('USER_SERVICE_INTERNAL_URL') ??
-      'http://user-service:3001'
-    );
-  }
-
   private async register(): Promise<void> {
     const gatewayUrl = this.config.getOrThrow<string>('GATEWAY_URL');
     const baseUrl = this.serviceBaseUrl();
     await axios.post(`${gatewayUrl}/registry/register`, {
-      name: 'user-service',
+      name: 'playlist-service',
       internalUrl: baseUrl,
-      routes: [
-        '/auth',
-        '/users',
-        '/artists',
-        '/tracks',
-        '/search',
-        '/subscription',
-        '/stats',
-        '/recommendations',
-      ],
+      routes: ['/playlists'],
       healthUrl: `${baseUrl}/health`,
     });
   }
@@ -78,7 +69,7 @@ export class RegistrationService implements OnModuleInit, OnModuleDestroy {
   private async heartbeat(): Promise<void> {
     try {
       const gatewayUrl = this.config.getOrThrow<string>('GATEWAY_URL');
-      await axios.put(`${gatewayUrl}/registry/heartbeat/user-service`);
+      await axios.put(`${gatewayUrl}/registry/heartbeat/playlist-service`);
     } catch {
       this.logger.warn('Heartbeat failed, attempting re-registration...');
       await this.register().catch((err: unknown) => {

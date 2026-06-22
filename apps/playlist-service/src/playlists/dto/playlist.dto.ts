@@ -11,21 +11,9 @@ import {
   MinLength,
 } from 'class-validator';
 import {
-  CreateCommentDto as CreateCommentSchema,
   AddPlaylistTrackDto as AddPlaylistTrackSchema,
   UpdatePlaylistDto as UpdatePlaylistSchema,
 } from '@sonoria/schemas';
-
-export class CreateCommentDto implements CreateCommentSchema {
-  @IsString()
-  @MinLength(1)
-  @MaxLength(2000)
-  body!: string;
-
-  @IsOptional()
-  @IsUUID()
-  parentId?: string;
-}
 
 export class CreatePlaylistDto {
   @IsString()

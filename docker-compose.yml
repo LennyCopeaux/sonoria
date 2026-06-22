@@ -115,6 +115,46 @@ services:
     networks:
       - sonoria
 
+  social-service:
+    build:
+      context: .
+      dockerfile: ./apps/social-service/Dockerfile
+    container_name: sonoria-social-service
+    env_file:
+      - ./apps/social-service/.env
+    environment:
+      PORT: 3005
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      GATEWAY_URL: http://gateway:3010
+      SOCIAL_SERVICE_INTERNAL_URL: http://social-service:3005
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sonoria
+
+  playlist-service:
+    build:
+      context: .
+      dockerfile: ./apps/playlist-service/Dockerfile
+    container_name: sonoria-playlist-service
+    env_file:
+      - ./apps/playlist-service/.env
+    environment:
+      PORT: 3006
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      GATEWAY_URL: http://gateway:3010
+      PLAYLIST_SERVICE_INTERNAL_URL: http://playlist-service:3006
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sonoria
+
   media-service:
     build:
       context: .
