@@ -60,7 +60,7 @@ export class StatsService {
               },
             }),
         this.prisma.follow.count({
-          where: { followingId: profile.userId },
+          where: { artistId: data.artistId },
         }),
         trackIds.length === 0
           ? []
