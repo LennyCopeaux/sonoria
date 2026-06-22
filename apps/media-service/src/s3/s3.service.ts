@@ -65,6 +65,10 @@ export class S3Service {
     return `tracks/${trackId}/cover/${filename}`;
   }
 
+  buildAvatarKey(userId: string, filename: string): string {
+    return `avatars/${userId}/${filename}`;
+  }
+
   /** Public, anonymously-readable URL for an object (bucket has download policy). */
   publicUrl(key: string): string {
     return `${this.publicEndpoint}/${this.bucket}/${key}`;

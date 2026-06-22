@@ -48,3 +48,27 @@ export async function uploadCover(trackId: string, file: File): Promise<string> 
 
   return res.publicUrl;
 }
+
+/** Uploads a profile avatar image and returns its public URL. */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const mimeType = resolveImageMimeType(file);
+  if (!mimeType) {
+    throw new Error("Format d'image non supporté (JPG, PNG ou WEBP).");
+  }
+
+  const res = await fetchApi<CoverUrlResponse>("/media/avatar-url", {
+    method: "POST",
+    body: JSON.stringify({ userId, filename: file.name, mimeType }),
+  });
+
+  const put = await fetch(res.uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": mimeType },
+    body: file,
+  });
+  if (!put.ok) {
+    throw new Error("Échec de l'envoi de la photo.");
+  }
+
+  return res.publicUrl;
+}

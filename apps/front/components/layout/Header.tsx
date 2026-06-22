@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { IconButton } from "@/components/ui/IconButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useProfile } from "@/hooks/useProfile";
 
 function roleLabel(role: string | null): string {
   switch (role) {
@@ -26,6 +28,7 @@ function roleLabel(role: string | null): string {
 export function Header() {
   const router = useRouter();
   const { isLoggedIn, user, role } = useAuth();
+  const { profile } = useProfile();
   const { unreadCount } = useNotifications();
   const [query, setQuery] = useState("");
 
@@ -36,7 +39,8 @@ export function Header() {
     router.push(`/search?q=${encodeURIComponent(trimmed)}`);
   };
 
-  const initial = (user?.email ?? "?").charAt(0).toUpperCase();
+  const displayName = profile?.name ?? user?.email ?? "";
+  const initial = (displayName || "?").charAt(0).toUpperCase();
 
   return (
     <header className="flex h-20 shrink-0 items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
@@ -77,19 +81,34 @@ export function Header() {
               </IconButton>
             </Link>
 
-            <div className="flex items-center gap-3 rounded-full bg-surface-2 py-1 pl-1 pr-1 sm:pr-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-soft text-sm font-bold text-white">
-                {initial}
-              </span>
+            <Link
+              href="/profile"
+              className="flex items-center gap-3 rounded-full bg-surface-2 py-1 pl-1 pr-1 transition-colors hover:bg-surface-3 sm:pr-3"
+            >
+              {profile?.avatarUrl ? (
+                <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full">
+                  <Image
+                    src={profile.avatarUrl}
+                    alt={displayName}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </span>
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-soft text-sm font-bold text-white">
+                  {initial}
+                </span>
+              )}
               <div className="hidden flex-col leading-tight sm:flex">
                 <span className="max-w-[10rem] truncate text-sm font-semibold text-white">
-                  {user.email}
+                  {displayName}
                 </span>
                 <Badge variant="primary" className="mt-0.5 w-fit px-1.5 py-0">
                   {roleLabel(role)}
                 </Badge>
               </div>
-            </div>
+            </Link>
           </>
         ) : (
           <Link
