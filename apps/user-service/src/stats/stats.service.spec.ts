@@ -31,6 +31,7 @@ describe('StatsService', () => {
       sub: 'user-1',
       email: 'a@test.com',
       role: Role.ARTIST,
+      jti: 'jti-1',
     });
 
     expect(stats.totalStreams).toBe(10);

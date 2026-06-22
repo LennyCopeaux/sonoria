@@ -82,7 +82,7 @@ describe('AuthService.register', () => {
       email: 'artist@example.com',
       password: 'password123',
       name: 'Artist Name',
-      role: Role.ARTIST,
+      role: 'ARTIST',
     });
 
     expect(result.user.role).toBe(Role.ARTIST);

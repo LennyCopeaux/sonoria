@@ -14,5 +14,7 @@ export const LoginDto = z.object({
   password: z.string().min(1),
 });
 
-export type RegisterDto = z.infer<typeof RegisterDto>;
+// Use the input type so `role` stays optional (the Zod `.default("USER")`
+// only fills it in on parse); the request DTO accepts an absent role.
+export type RegisterDto = z.input<typeof RegisterDto>;
 export type LoginDto = z.infer<typeof LoginDto>;

@@ -43,7 +43,7 @@ export class AuthService {
     }
 
     const passwordHash = await argon2.hash(dto.password);
-    const role = dto.role === Role.ARTIST ? Role.ARTIST : Role.USER;
+    const role = dto.role === 'ARTIST' ? Role.ARTIST : Role.USER;
 
     const user = await this.prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
