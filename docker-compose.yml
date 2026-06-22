@@ -39,6 +39,7 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3002,http://localhost:3010"
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -67,8 +68,6 @@ services:
         done;
         mc mb local/sonoria-audio --ignore-existing;
         mc anonymous set download local/sonoria-audio || true;
-        printf '%s' '{"CORSRules":[{"AllowedOrigins":["http://localhost:3002","http://localhost:3010"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"]}]}' > /tmp/cors.json;
-        mc cors set local/sonoria-audio /tmp/cors.json || true;
         echo 'minio bootstrap complete';
       "
     restart: "no"
@@ -80,6 +79,9 @@ services:
     container_name: sonoria-gateway
     env_file:
       - ./apps/gateway/.env
+    environment:
+      PORT: 3010
+      REDIS_URL: redis://redis:6379
     ports:
       - "3010:3010"
     depends_on:
@@ -95,6 +97,14 @@ services:
     container_name: sonoria-user-service
     env_file:
       - ./apps/user-service/.env
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      REDIS_URL: redis://redis:6379
+      GATEWAY_URL: http://gateway:3010
+      USER_SERVICE_INTERNAL_URL: http://user-service:3001
+      MEDIA_SERVICE_URL: http://media-service:3002
+      JOB_QUEUE_NAME: media-processing
     ports:
       - "3001:3001"
     depends_on:
@@ -135,6 +145,12 @@ services:
     container_name: sonoria-job-runner
     env_file:
       - ./apps/job-runner/.env
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      USER_SERVICE_URL: http://user-service:3001
     ports:
       - "3003:3003"
     depends_on:
@@ -154,8 +170,10 @@ services:
     container_name: sonoria-front
     env_file:
       - ./apps/front/.env
+    environment:
+      PORT: 3002
     ports:
-      - "3004:3004"
+      - "3002:3002"
     depends_on:
       - gateway
     networks:

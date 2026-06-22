@@ -59,7 +59,7 @@ if (existsSync(frontExample)) {
 } else {
   writeFileSync(
     join(root, "apps", "front", ".env"),
-    "NEXT_PUBLIC_API_URL=http://localhost:3000\n",
+    "NEXT_PUBLIC_API_URL=http://localhost:3010\n",
   );
   console.log("wrote apps/front/.env (minimal)");
 }
