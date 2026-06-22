@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ListPlus, Plus } from "lucide-react";
 
 import { PlaylistCard } from "@/components/playlist/PlaylistCard";
-import { CreateTrackForm } from "@/components/track/CreateTrackForm";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchApi } from "@/lib/api";
@@ -16,7 +14,7 @@ import type { PaginatedPlaylists, PlaylistSummary } from "@/lib/social-types";
 
 export default function LibraryPage() {
   const router = useRouter();
-  const { isLoggedIn, isReady, role } = useAuth();
+  const { isLoggedIn, isReady } = useAuth();
   const [playlists, setPlaylists] = useState<PlaylistSummary[]>([]);
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
@@ -64,65 +62,68 @@ export default function LibraryPage() {
 
   if (!isReady || !isLoggedIn || loading) {
     return (
-      <div className="flex justify-center p-12">
-        <Spinner />
+      <div className="flex justify-center p-16">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="mb-6 text-2xl font-bold text-white">Bibliothèque</h1>
-
-      {role === "ARTIST" ? (
-        <section className="mb-10 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-          <h2 className="mb-1 text-lg font-semibold text-white">Publier un titre</h2>
-          <p className="mb-6 text-sm text-zinc-400">
-            Uploadez un fichier MP3, WAV ou FLAC. Il sera traité automatiquement.
-          </p>
-          <CreateTrackForm />
-        </section>
-      ) : (
-        <section className="mb-10 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-          <p className="text-sm text-zinc-400">
-            La publication de titres est réservée aux comptes{" "}
-            <span className="text-white">Artiste</span>.{" "}
-            <Link href="/auth/register" className="text-primary hover:underline">
-              Créez un compte artiste
-            </Link>{" "}
-            pour uploader vos morceaux.
-          </p>
-        </section>
-      )}
-
-      <form
-        onSubmit={(e) => void handleCreate(e)}
-        className="mb-8 flex max-w-md gap-2"
-      >
-        <Input
-          label="Nouvelle playlist"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Nom de la playlist"
-          className="flex-1"
-        />
-        <Button type="submit" disabled={creating} className="self-end">
-          Créer
-        </Button>
-      </form>
-
-      <h2 className="mb-4 text-lg font-semibold text-white">Mes playlists</h2>
-      {playlists.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {playlists.map((playlist) => (
-            <PlaylistCard key={playlist.id} playlist={playlist} />
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-zinc-500">
-          Aucune playlist. Créez-en une ci-dessus.
+    <div className="flex flex-col gap-8 py-6">
+      <header>
+        <h1 className="text-3xl font-bold text-white">Bibliothèque</h1>
+        <p className="mt-1 text-sm text-muted">
+          Vos playlists et votre espace de création.
         </p>
-      )}
+      </header>
+
+      {/* Create playlist */}
+      <section className="rounded-[var(--radius-card)] border border-line bg-surface p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <ListPlus className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold text-white">
+            Créer une playlist
+          </h2>
+        </div>
+        <form
+          onSubmit={(e) => void handleCreate(e)}
+          className="flex flex-col gap-3 sm:flex-row"
+        >
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Nom de la playlist"
+            className="h-11 flex-1 rounded-xl border border-line bg-surface-2 px-4 text-sm text-white placeholder:text-muted-2 transition-colors focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <Button
+            type="submit"
+            size="lg"
+            disabled={creating || !title.trim()}
+            className="sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            {creating ? "Création…" : "Créer"}
+          </Button>
+        </form>
+      </section>
+
+      {/* My playlists */}
+      <section>
+        <h2 className="mb-4 text-xl font-bold text-white">Mes playlists</h2>
+        {playlists.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {playlists.map((playlist) => (
+              <PlaylistCard key={playlist.id} playlist={playlist} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[var(--radius-card)] border border-dashed border-line bg-surface/40 p-10 text-center">
+            <p className="text-sm text-muted">
+              Aucune playlist pour le moment. Créez-en une ci-dessus.
+            </p>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
