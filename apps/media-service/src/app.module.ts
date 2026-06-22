@@ -15,6 +15,7 @@ import { MediaModule } from './media/media.module';
         REDIS_URL: Joi.string().required(),
         GATEWAY_URL: Joi.string().required(),
         S3_ENDPOINT: Joi.string().required(),
+        S3_PUBLIC_ENDPOINT: Joi.string().optional(),
         S3_REGION: Joi.string().default('us-east-1'),
         S3_ACCESS_KEY: Joi.string().required(),
         S3_SECRET_KEY: Joi.string().required(),

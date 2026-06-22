@@ -33,7 +33,7 @@ export class CreateTrackDto {
   tags?: string[];
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   pochetteUrl?: string;
 
   @IsString()
