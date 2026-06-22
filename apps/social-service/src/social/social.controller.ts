@@ -72,6 +72,11 @@ export class SocialController {
     return this.follows.getFollowers(artistId, query.page, query.limit);
   }
 
+  @Get('me/following')
+  getFollowing(@CurrentUser() user: JwtPayload) {
+    return this.follows.getFollowing(user.sub);
+  }
+
   @Post('tracks/:id/comments')
   createComment(
     @CurrentUser() user: JwtPayload,

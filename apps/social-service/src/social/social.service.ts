@@ -197,6 +197,31 @@ export class FollowsService {
       totalPages: totalPages(total, pagination.limit),
     };
   }
+
+  async getFollowing(userId: string) {
+    const follows = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        artist: {
+          select: {
+            id: true,
+            slug: true,
+            user: { select: { name: true, avatarUrl: true } },
+          },
+        },
+      },
+    });
+
+    return {
+      artists: follows.map((follow) => ({
+        id: follow.artist.id,
+        slug: follow.artist.slug,
+        name: follow.artist.user.name,
+        avatarUrl: follow.artist.user.avatarUrl,
+      })),
+    };
+  }
 }
 
 @Injectable()
