@@ -48,9 +48,15 @@ export default function LoginPage() {
       router.replace("/library");
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message || "Identifiants incorrects");
+        if (err.status === 401) {
+          setError("Email ou mot de passe incorrect.");
+        } else if (err.status === 429) {
+          setError("Trop de tentatives. Réessayez dans un instant.");
+        } else {
+          setError("Connexion impossible. Réessayez plus tard.");
+        }
       } else {
-        setError("Impossible de se connecter");
+        setError("Connexion impossible. Vérifiez votre connexion.");
       }
     } finally {
       setLoading(false);

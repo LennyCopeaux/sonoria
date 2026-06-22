@@ -65,9 +65,15 @@ export default function RegisterPage() {
       router.push("/library");
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message || "Impossible de créer le compte");
+        if (err.status === 409) {
+          setError("Cet email est déjà utilisé.");
+        } else if (err.status === 400) {
+          setError("Informations invalides. Vérifiez le formulaire.");
+        } else {
+          setError("Impossible de créer le compte. Réessayez plus tard.");
+        }
       } else {
-        setError("Une erreur est survenue");
+        setError("Une erreur est survenue. Réessayez plus tard.");
       }
     } finally {
       setLoading(false);
