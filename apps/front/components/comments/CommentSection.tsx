@@ -22,7 +22,7 @@ export function CommentSection({ trackId }: CommentSectionProps) {
     setLoading(true);
     try {
       const data = await fetchApi<CommentsResponse>(
-        `/tracks/${trackId}/comments`,
+        `/social/tracks/${trackId}/comments`,
       );
       setComments(data.comments);
     } catch {
@@ -41,7 +41,7 @@ export function CommentSection({ trackId }: CommentSectionProps) {
     if (!body.trim()) return;
     setSubmitting(true);
     try {
-      await fetchApi(`/tracks/${trackId}/comments`, {
+      await fetchApi(`/social/tracks/${trackId}/comments`, {
         method: "POST",
         body: JSON.stringify({ body: body.trim() }),
       });
