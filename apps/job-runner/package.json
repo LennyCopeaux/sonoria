@@ -6,9 +6,9 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch",
-    "start": "node dist/main.js",
-    "start:debug": "nest start --debug --watch",
+    "dev": "PORT=3003 nest start --watch",
+    "start": "PORT=3003 node dist/main.js",
+    "start:debug": "PORT=3003 nest start --debug --watch",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",
     "test": "jest",
