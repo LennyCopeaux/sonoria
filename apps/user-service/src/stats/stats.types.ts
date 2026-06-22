@@ -1,8 +1,17 @@
+export interface DailyStreamCount {
+  date: string;
+  count: number;
+}
+
+export interface TopTrack {
+  trackId: string;
+  title: string;
+  streams: number;
+}
+
 export interface ArtistStats {
-  artistId: string;
   totalStreams: number;
-  streamsLast7Days: number;
+  streamsLast7Days: DailyStreamCount[];
+  topTracks: TopTrack[];
   followersCount: number;
-  topTracks: Array<{ trackId: string; title: string; streams: number }>;
-  computedAt: string;
 }

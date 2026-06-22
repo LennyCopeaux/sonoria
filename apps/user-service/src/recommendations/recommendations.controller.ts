@@ -5,11 +5,13 @@ import { JwtPayload } from '../auth/types';
 import { RecommendationsService } from './recommendations.service';
 
 @Controller('recommendations')
+@UseGuards(AuthGuard)
 export class RecommendationsController {
-  constructor(private readonly recommendationsService: RecommendationsService) {}
+  constructor(
+    private readonly recommendationsService: RecommendationsService,
+  ) {}
 
-  @Get('me')
-  @UseGuards(AuthGuard)
+  @Get()
   getMyRecommendations(@CurrentUser() user: JwtPayload) {
     return this.recommendationsService.getForUser(user.sub);
   }
