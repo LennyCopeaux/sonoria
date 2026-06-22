@@ -207,6 +207,8 @@ services:
     build:
       context: .
       dockerfile: ./apps/front/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3010
     container_name: sonoria-front
     env_file:
       - ./apps/front/.env
