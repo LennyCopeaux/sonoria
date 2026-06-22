@@ -7,10 +7,10 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-zinc-800 text-zinc-300",
-  primary: "bg-primary/20 text-primary",
-  success: "bg-emerald-500/20 text-emerald-400",
-  warning: "bg-amber-500/20 text-amber-400",
+  default: "bg-surface-3 text-muted",
+  primary: "bg-primary/15 text-primary-soft ring-1 ring-primary/20",
+  success: "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20",
+  warning: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20",
 };
 
 export function Badge({

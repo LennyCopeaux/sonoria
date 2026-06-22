@@ -1,20 +1,107 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
+  /* Base */
+  --background: #08080a;
+  --foreground: #f4f4f5;
   --primary: #ef4444;
+  --primary-soft: #f87171;
+
+  /* Layered surfaces */
+  --surface: #121214;
+  --surface-2: #1a1a1e;
+  --surface-3: #232329;
+  --line: #26262c;
+  --muted: #8b8b96;
+  --muted-2: #6a6a74;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
   --font-sans: var(--font-inter);
+
+  --radius-card: 1.25rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, sans-serif;
+  /* subtle warm glow to give depth like the reference */
+  background-image:
+    radial-gradient(
+      60rem 40rem at 8% -10%,
+      rgba(239, 68, 68, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      50rem 40rem at 100% 0%,
+      rgba(99, 102, 241, 0.05),
+      transparent 55%
+    );
+  background-attachment: fixed;
+}
+
+/* Thin, discreet scrollbars to match the dark UI */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #34343c;
+}
+
+/* Hide horizontal scrollbar for chip/cover rails while keeping scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Range slider (player) — slim track + primary thumb */
+input[type="range"].range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--surface-3);
+  cursor: pointer;
+}
+input[type="range"].range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 9999px;
+  background: var(--foreground);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18);
+  transition: transform 0.1s ease;
+}
+input[type="range"].range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type="range"].range-slider::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--foreground);
 }

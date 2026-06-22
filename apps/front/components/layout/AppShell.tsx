@@ -10,11 +10,15 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-white">
-      <Header />
+    <div className="flex h-screen flex-col bg-background text-foreground">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto pb-28">{children}</main>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto px-4 pb-8 sm:px-6 lg:px-8">
+            {children}
+          </main>
+        </div>
       </div>
       <AudioPlayer />
     </div>

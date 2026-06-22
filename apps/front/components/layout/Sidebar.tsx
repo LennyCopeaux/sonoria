@@ -2,64 +2,98 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Disc3,
+  Home,
+  Library,
+  LogOut,
+  Search,
+  UploadCloud,
+  type LucideIcon,
+} from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
 
-const baseLinks = [
-  { href: "/", label: "Accueil" },
-  { href: "/library", label: "Bibliothèque" },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+const menu: NavItem[] = [
+  { href: "/", label: "Accueil", icon: Home },
+  { href: "/search", label: "Rechercher", icon: Search },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { isLoggedIn, role, logout } = useAuth();
 
-  const links = [
-    ...baseLinks,
+  const library: NavItem[] = [
+    { href: "/library", label: "Bibliothèque", icon: Library },
     ...(role === "ARTIST"
-      ? [{ href: "/dashboard", label: "Publier un titre" }]
+      ? [{ href: "/dashboard", label: "Publier un titre", icon: UploadCloud }]
       : []),
   ];
 
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const renderItem = ({ href, label, icon: Icon }: NavItem) => {
+    const active = isActive(href);
+    return (
+      <Link
+        key={href}
+        href={href}
+        className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+          active
+            ? "bg-surface-2 text-white"
+            : "text-muted hover:bg-surface/60 hover:text-white"
+        }`}
+      >
+        {active ? (
+          <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+        ) : null}
+        <Icon
+          className={`h-5 w-5 shrink-0 ${active ? "text-primary" : "text-muted group-hover:text-white"}`}
+        />
+        {label}
+      </Link>
+    );
+  };
+
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 p-4">
-      <nav className="flex flex-col gap-1">
-        {links.map((link) => {
-          const isActive =
-            link.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(link.href);
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-surface/40 p-4 md:flex">
+      <Link href="/" className="mb-8 flex items-center gap-2.5 px-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/30">
+          <Disc3 className="h-5 w-5" />
+        </span>
+        <span className="text-lg font-bold tracking-tight">SONORIA</span>
+      </Link>
 
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-primary/15 text-primary"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-              }`}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <nav className="flex flex-col gap-1">{menu.map(renderItem)}</nav>
 
-      <div className="mt-4 border-t border-zinc-800 pt-4">
+      <p className="mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-muted-2">
+        Bibliothèque
+      </p>
+      <nav className="mt-2 flex flex-col gap-1">{library.map(renderItem)}</nav>
+
+      <div className="mt-auto border-t border-line pt-3">
         {isLoggedIn ? (
           <button
             type="button"
             onClick={() => void logout()}
-            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface/60 hover:text-white"
           >
+            <LogOut className="h-5 w-5 shrink-0" />
             Déconnexion
           </button>
         ) : (
           <Link
             href="/auth/login"
-            className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface/60 hover:text-white"
           >
+            <LogOut className="h-5 w-5 shrink-0 rotate-180" />
             Connexion
           </Link>
         )}

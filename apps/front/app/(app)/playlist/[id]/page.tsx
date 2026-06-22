@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 
 import { TrackCard } from "@/components/track/TrackCard";
 import { Spinner } from "@/components/ui/Spinner";
@@ -34,8 +35,12 @@ export default function PlaylistPage() {
 
   return (
     <div className="p-6">
-      <Link href="/library" className="text-sm text-zinc-400 hover:text-primary">
-        ← Bibliothèque
+      <Link
+        href="/library"
+        className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-white"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Bibliothèque
       </Link>
       <h1 className="mt-4 text-3xl font-bold text-white">{playlist.title}</h1>
       <p className="mt-1 text-sm text-zinc-400">

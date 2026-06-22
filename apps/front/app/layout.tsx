@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import { AppShell } from "@/components/layout/AppShell";
-
 import "./globals.css";
 
 const inter = Inter({
@@ -11,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SONORIA",
-  description: "Plateforme de streaming musical",
+  title: "SONORIA — Streaming musical",
+  description: "Écoutez, partagez et découvrez de la musique.",
 };
 
 export default function RootLayout({
@@ -22,9 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${inter.variable} h-full`}>
-      <body className="min-h-full antialiased">
-        <AppShell>{children}</AppShell>
-      </body>
+      <body className="min-h-full antialiased">{children}</body>
     </html>
   );
 }
