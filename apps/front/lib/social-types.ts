@@ -10,6 +10,7 @@ export interface Track {
   status: string;
   playCount: number;
   artistProfileId?: string | null;
+  artistName?: string | null;
   streamUrl?: string;
   likeCount?: number;
   likedByMe?: boolean;

@@ -5,19 +5,35 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Heart, Music, Play } from "lucide-react";
 
+import { AddToPlaylistMenu } from "@/components/playlist/AddToPlaylistMenu";
 import { fetchApi } from "@/lib/api";
 import { coverGradient } from "@/lib/cover";
-import { fetchTrackForPlayback, PlaybackError } from "@/lib/playTrack";
+import {
+  fetchTrackForPlayback,
+  PlaybackError,
+  toPlayerTrackLite,
+} from "@/lib/playTrack";
 import type { LikeResponse, Track } from "@/lib/social-types";
 import { usePlayerStore } from "@/store/player";
 
 interface TrackCardProps {
   track: Track;
   artistName?: string;
+  /** Sibling tracks in the same list — seeds the player queue for next/prev. */
+  queue?: Track[];
+  /** Position of this track within `queue`. */
+  index?: number;
 }
 
-export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
+export function TrackCard({
+  track,
+  artistName = "Artiste",
+  queue,
+  index,
+}: TrackCardProps) {
+  const displayArtist = track.artistName ?? artistName;
   const play = usePlayerStore((s) => s.play);
+  const setQueue = usePlayerStore((s) => s.setQueue);
   const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
   const [liked, setLiked] = useState(track.likedByMe ?? false);
   const [loading, setLoading] = useState(false);
@@ -49,9 +65,17 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
 
   const handlePlay = async () => {
     setPlayError(null);
+
+    // Seed the queue from the surrounding list so next/prev can navigate it.
+    // The player resolves each track's stream URL lazily as it becomes current.
+    if (queue && queue.length > 0 && typeof index === "number") {
+      setQueue(queue.map(toPlayerTrackLite), index);
+      return;
+    }
+
     setPlaying(true);
     try {
-      const playerTrack = await fetchTrackForPlayback(track.id, artistName);
+      const playerTrack = await fetchTrackForPlayback(track.id, displayArtist);
       play(playerTrack);
     } catch (err) {
       setPlayError(
@@ -65,7 +89,7 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
   };
 
   return (
-    <article className="group flex flex-col gap-3">
+    <article className="group relative flex flex-col gap-3">
       <div className="relative aspect-square overflow-hidden rounded-2xl ring-1 ring-line/60">
         {cover ? (
           <Image
@@ -87,19 +111,6 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
         {/* dark overlay on hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
 
-        {/* like button */}
-        <button
-          type="button"
-          onClick={() => void handleLike()}
-          disabled={loading}
-          aria-label={liked ? "Retirer des favoris" : "Ajouter aux favoris"}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60"
-        >
-          <Heart
-            className={`h-4 w-4 ${liked ? "fill-primary text-primary" : ""}`}
-          />
-        </button>
-
         {/* play button */}
         <button
           type="button"
@@ -112,6 +123,23 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
         </button>
       </div>
 
+      {/* top-right actions sit OUTSIDE the clipped cover so the playlist
+          popover can overflow the card without being cut off. */}
+      <div className="absolute right-3 top-3 flex items-center gap-2">
+        <AddToPlaylistMenu trackId={track.id} direction="down" align="right" />
+        <button
+          type="button"
+          onClick={() => void handleLike()}
+          disabled={loading}
+          aria-label={liked ? "Retirer des favoris" : "Ajouter aux favoris"}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60"
+        >
+          <Heart
+            className={`h-4 w-4 ${liked ? "fill-primary text-primary" : ""}`}
+          />
+        </button>
+      </div>
+
       <div className="min-w-0">
         <Link
           href={`/track/${track.id}`}
@@ -120,7 +148,7 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
           {track.title}
         </Link>
         <p className="truncate text-xs text-muted">
-          {artistName}
+          {displayArtist}
           {track.genre ? ` · ${track.genre}` : ""}
         </p>
         {playError ? (

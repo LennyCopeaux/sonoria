@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
+  Heart,
   Music,
   Pause,
   Play,
@@ -14,6 +15,10 @@ import {
   Volume2,
 } from "lucide-react";
 
+import { AddToPlaylistMenu } from "@/components/playlist/AddToPlaylistMenu";
+import { fetchApi } from "@/lib/api";
+import { fetchTrackForPlayback, PlaybackError } from "@/lib/playTrack";
+import type { LikeResponse } from "@/lib/social-types";
 import { usePlayerStore } from "@/store/player";
 
 function formatTime(seconds: number): string {
@@ -28,6 +33,8 @@ export function AudioPlayer() {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
+  const [liked, setLiked] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
 
   const {
     currentTrack,
@@ -49,11 +56,16 @@ export function AudioPlayer() {
     if (!audio) return;
 
     if (isPlaying) {
-      void audio.play().catch(() => pause());
+      // The source may still be loading (e.g. a freshly queued track whose
+      // stream URL is being resolved). Ignore a transient failure here — the
+      // load effect starts playback once the source is ready, and the audio
+      // "error" handler covers genuine failures. Pausing here would cancel
+      // the play the user just asked for.
+      void audio.play().catch(() => {});
     } else {
       audio.pause();
     }
-  }, [isPlaying, pause]);
+  }, [isPlaying]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -61,31 +73,62 @@ export function AudioPlayer() {
     audio.volume = volume;
   }, [volume]);
 
+  // Load a NEW track only when its identity/source changes — NOT on every
+  // play/pause toggle, otherwise the audio reloads and restarts from 0.
+  // The play/pause effect above handles resuming at the current position.
+  // Queued tracks arrive without a stream URL, so we resolve it on demand.
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !currentTrack?.streamUrl) return;
+    if (!audio || !currentTrack) return;
+    let cancelled = false;
 
-    setPlaybackError(null);
-    audio.src = currentTrack.streamUrl;
-    setProgress(0);
-    setDuration(currentTrack.durationS ?? 0);
-    audio.load();
+    const load = async () => {
+      setPlaybackError(null);
+      let url = currentTrack.streamUrl;
+      let durationS = currentTrack.durationS;
 
-    if (isPlaying) {
-      void audio.play().catch(() => {
-        setPlaybackError(
-          "Lecture impossible — fichier audio introuvable ou format non supporté.",
-        );
-        pause();
-      });
-    }
-  }, [
-    currentTrack?.id,
-    currentTrack?.streamUrl,
-    currentTrack?.durationS,
-    isPlaying,
-    pause,
-  ]);
+      if (!url) {
+        try {
+          const resolved = await fetchTrackForPlayback(
+            currentTrack.id,
+            currentTrack.artist,
+          );
+          url = resolved.streamUrl;
+          durationS = resolved.durationS ?? durationS;
+        } catch (err) {
+          if (cancelled) return;
+          setPlaybackError(
+            err instanceof PlaybackError
+              ? err.message
+              : "Lecture impossible — titre indisponible.",
+          );
+          pause();
+          return;
+        }
+      }
+
+      if (cancelled || !audio || !url) return;
+      audio.src = url;
+      setProgress(0);
+      setDuration(durationS ?? 0);
+      audio.load();
+
+      if (usePlayerStore.getState().isPlaying) {
+        void audio.play().catch(() => {
+          if (cancelled) return;
+          setPlaybackError(
+            "Lecture impossible — fichier audio introuvable ou format non supporté.",
+          );
+          pause();
+        });
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentTrack, pause]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -112,11 +155,32 @@ export function AudioPlayer() {
     };
   }, [next, pause]);
 
+  // Sync the heart with the like state carried by the current track.
+  useEffect(() => {
+    setLiked(currentTrack?.likedByMe ?? false);
+  }, [currentTrack?.id, currentTrack?.likedByMe]);
+
   const handleSeek = (value: number) => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = value;
     setProgress(value);
+  };
+
+  const handleLike = async () => {
+    if (!currentTrack) return;
+    setLikeLoading(true);
+    try {
+      const res = await fetchApi<LikeResponse>(
+        `/social/tracks/${currentTrack.id}/like`,
+        { method: liked ? "DELETE" : "POST" },
+      );
+      setLiked(res.liked);
+    } catch {
+      // ignore
+    } finally {
+      setLikeLoading(false);
+    }
   };
 
   if (!currentTrack) {
@@ -160,6 +224,23 @@ export function AudioPlayer() {
               {playbackError ?? currentTrack.artist}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => void handleLike()}
+            disabled={likeLoading}
+            aria-label={liked ? "Retirer des favoris" : "Ajouter aux favoris"}
+            className={`ml-1 shrink-0 transition-colors ${
+              liked ? "text-primary" : "text-muted hover:text-white"
+            }`}
+          >
+            <Heart className={`h-4 w-4 ${liked ? "fill-primary" : ""}`} />
+          </button>
+          <AddToPlaylistMenu
+            trackId={currentTrack.id}
+            direction="up"
+            align="left"
+            triggerClassName="shrink-0 text-muted transition-colors hover:text-white"
+          />
         </div>
 
         {/* Controls + progress */}
@@ -184,7 +265,7 @@ export function AudioPlayer() {
             <button
               type="button"
               onClick={togglePlay}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-background transition-transform hover:scale-105 active:scale-95"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition-all hover:scale-105 hover:bg-primary-soft active:scale-95"
               aria-label={isPlaying ? "Pause" : "Lecture"}
             >
               {isPlaying ? (
@@ -220,6 +301,13 @@ export function AudioPlayer() {
               value={progress}
               onChange={(event) => handleSeek(Number(event.target.value))}
               className="range-slider flex-1"
+              style={{
+                background: `linear-gradient(to right, var(--primary) ${
+                  duration ? (progress / duration) * 100 : 0
+                }%, var(--surface-3) ${
+                  duration ? (progress / duration) * 100 : 0
+                }%)`,
+              }}
               aria-label="Progression"
             />
             <span className="tabular-nums">{formatTime(duration)}</span>

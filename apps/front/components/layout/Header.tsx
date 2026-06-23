@@ -44,9 +44,16 @@ export function Header() {
 
   return (
     <header className="flex h-20 shrink-0 items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
-      <Link href="/" className="flex items-center gap-2 md:hidden" aria-label="Accueil">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+      <Link
+        href="/"
+        className="flex shrink-0 items-center gap-2.5"
+        aria-label="Accueil"
+      >
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/30">
           <Disc3 className="h-5 w-5" />
+        </span>
+        <span className="hidden text-lg font-bold tracking-tight sm:inline">
+          SONORIA
         </span>
       </Link>
 

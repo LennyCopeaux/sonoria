@@ -27,6 +27,7 @@ export interface TrackResponse {
   playCount: number;
   artistProfileId: string | null;
   uploaderId: string;
+  artistName: string | null;
   waveformJson: unknown;
   createdAt: Date;
   updatedAt: Date;
@@ -34,6 +35,14 @@ export interface TrackResponse {
   likeCount: number;
   likedByMe?: boolean;
 }
+
+// The uploader's display name is the artist label shown in the UI; it is
+// loaded via an optional relation so callers that don't need it stay cheap.
+type TrackWithUploader = Track & { uploader?: { name: string } | null };
+
+const UPLOADER_SELECT = {
+  uploader: { select: { name: true } },
+} as const;
 
 @Injectable()
 export class TracksService {
@@ -116,6 +125,7 @@ export class TracksService {
         orderBy: { createdAt: 'desc' },
         skip: offset,
         take: limit,
+        include: UPLOADER_SELECT,
       }),
       this.prisma.track.count({ where }),
     ]);
@@ -176,6 +186,7 @@ export class TracksService {
         ...(dto.tags !== undefined && { tags: dto.tags }),
         ...(dto.pochetteUrl !== undefined && { coverUrl: dto.pochetteUrl }),
       },
+      include: UPLOADER_SELECT,
     });
 
     return this.toResponse(updated);
@@ -228,6 +239,7 @@ export class TracksService {
           waveformJson: dto.waveformJson,
         }),
       },
+      include: UPLOADER_SELECT,
     });
 
     return this.toResponse(updated);
@@ -313,8 +325,11 @@ export class TracksService {
     return `${base}-${randomBytes(8).toString('hex')}`;
   }
 
-  private async findTrackOrThrow(id: string): Promise<Track> {
-    const track = await this.prisma.track.findUnique({ where: { id } });
+  private async findTrackOrThrow(id: string): Promise<TrackWithUploader> {
+    const track = await this.prisma.track.findUnique({
+      where: { id },
+      include: UPLOADER_SELECT,
+    });
     if (!track) {
       throw new NotFoundException('Track not found');
     }
@@ -390,7 +405,7 @@ export class TracksService {
   }
 
   private toResponse(
-    track: Track,
+    track: TrackWithUploader,
     streamUrl?: string,
     likeMeta?: { likeCount: number; likedByMe?: boolean },
   ): TrackResponse {
@@ -406,6 +421,7 @@ export class TracksService {
       playCount: track.playCount,
       artistProfileId: track.artistProfileId,
       uploaderId: track.uploaderId,
+      artistName: track.uploader?.name ?? null,
       waveformJson: track.waveformJson,
       createdAt: track.createdAt,
       updatedAt: track.updatedAt,
