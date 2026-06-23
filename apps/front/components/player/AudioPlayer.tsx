@@ -2,6 +2,17 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import {
+  Music,
+  Pause,
+  Play,
+  Repeat,
+  Repeat1,
+  Shuffle,
+  SkipBack,
+  SkipForward,
+  Volume2,
+} from "lucide-react";
 
 import { usePlayerStore } from "@/store/player";
 
@@ -62,11 +73,19 @@ export function AudioPlayer() {
 
     if (isPlaying) {
       void audio.play().catch(() => {
-        setPlaybackError("Lecture impossible — fichier audio introuvable ou format non supporté.");
+        setPlaybackError(
+          "Lecture impossible — fichier audio introuvable ou format non supporté.",
+        );
         pause();
       });
     }
-  }, [currentTrack?.id, currentTrack?.streamUrl, currentTrack?.durationS, isPlaying, pause]);
+  }, [
+    currentTrack?.id,
+    currentTrack?.streamUrl,
+    currentTrack?.durationS,
+    isPlaying,
+    pause,
+  ]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -102,8 +121,8 @@ export function AudioPlayer() {
 
   if (!currentTrack) {
     return (
-      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 px-6 py-3 backdrop-blur">
-        <p className="text-center text-sm text-zinc-500">
+      <footer className="shrink-0 border-t border-line bg-surface/60 px-6 py-4 backdrop-blur">
+        <p className="text-center text-sm text-muted-2">
           {playbackError ?? "Aucune piste en lecture"}
         </p>
         <audio ref={audioRef} className="hidden" />
@@ -111,14 +130,14 @@ export function AudioPlayer() {
     );
   }
 
-  const repeatLabel =
-    repeat === "one" ? "1" : repeat === "all" ? "∞" : "↻";
+  const RepeatIcon = repeat === "one" ? Repeat1 : Repeat;
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/95 px-4 py-3 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center gap-4">
+    <footer className="shrink-0 border-t border-line bg-surface/80 px-3 py-3 backdrop-blur sm:px-6">
+      <div className="mx-auto flex max-w-screen-2xl items-center gap-4">
+        {/* Track info */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-zinc-800">
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-3">
             {currentTrack.coverUrl ? (
               <Image
                 src={currentTrack.coverUrl}
@@ -128,81 +147,88 @@ export function AudioPlayer() {
                 unoptimized
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-                ♪
+              <div className="flex h-full w-full items-center justify-center text-muted-2">
+                <Music className="h-5 w-5" />
               </div>
             )}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-white">
+            <p className="truncate text-sm font-semibold text-white">
               {currentTrack.title}
             </p>
-            <p className="truncate text-xs text-zinc-400">
+            <p className="truncate text-xs text-muted">
               {playbackError ?? currentTrack.artist}
             </p>
           </div>
         </div>
 
+        {/* Controls + progress */}
         <div className="flex flex-[2] flex-col items-center gap-2">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={toggleShuffle}
-              className={`text-sm transition-colors ${shuffle ? "text-primary" : "text-zinc-400 hover:text-white"}`}
+              className={`transition-colors ${shuffle ? "text-primary" : "text-muted hover:text-white"}`}
               aria-label="Lecture aléatoire"
             >
-              ⇄
+              <Shuffle className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={prev}
-              className="text-zinc-300 transition-colors hover:text-white"
+              className="text-muted transition-colors hover:text-white"
               aria-label="Piste précédente"
             >
-              ⏮
+              <SkipBack className="h-5 w-5" />
             </button>
             <button
               type="button"
               onClick={togglePlay}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-primary/90"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-background transition-transform hover:scale-105 active:scale-95"
               aria-label={isPlaying ? "Pause" : "Lecture"}
             >
-              {isPlaying ? "⏸" : "▶"}
+              {isPlaying ? (
+                <Pause className="h-5 w-5 fill-current" />
+              ) : (
+                <Play className="h-5 w-5 translate-x-px fill-current" />
+              )}
             </button>
             <button
               type="button"
               onClick={next}
-              className="text-zinc-300 transition-colors hover:text-white"
+              className="text-muted transition-colors hover:text-white"
               aria-label="Piste suivante"
             >
-              ⏭
+              <SkipForward className="h-5 w-5" />
             </button>
             <button
               type="button"
               onClick={toggleRepeat}
-              className={`text-sm transition-colors ${repeat !== "off" ? "text-primary" : "text-zinc-400 hover:text-white"}`}
+              className={`transition-colors ${repeat !== "off" ? "text-primary" : "text-muted hover:text-white"}`}
               aria-label="Mode répétition"
             >
-              {repeatLabel}
+              <RepeatIcon className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="flex w-full max-w-md items-center gap-2 text-xs text-zinc-400">
-            <span>{formatTime(progress)}</span>
+          <div className="flex w-full max-w-xl items-center gap-2 text-xs text-muted">
+            <span className="tabular-nums">{formatTime(progress)}</span>
             <input
               type="range"
               min={0}
               max={duration || 0}
               value={progress}
               onChange={(event) => handleSeek(Number(event.target.value))}
-              className="h-1 flex-1 cursor-pointer accent-primary"
+              className="range-slider flex-1"
+              aria-label="Progression"
             />
-            <span>{formatTime(duration)}</span>
+            <span className="tabular-nums">{formatTime(duration)}</span>
           </div>
         </div>
 
-        <div className="flex flex-1 items-center justify-end gap-2">
-          <span className="text-xs text-zinc-400">🔊</span>
+        {/* Volume */}
+        <div className="hidden flex-1 items-center justify-end gap-2 lg:flex">
+          <Volume2 className="h-4 w-4 text-muted" />
           <input
             type="range"
             min={0}
@@ -210,7 +236,7 @@ export function AudioPlayer() {
             step={0.01}
             value={volume}
             onChange={(event) => setVolume(Number(event.target.value))}
-            className="h-1 w-24 cursor-pointer accent-primary"
+            className="range-slider w-28"
             aria-label="Volume"
           />
         </div>

@@ -26,6 +26,6 @@ export class UpdateTrackDto {
   tags?: string[];
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   pochetteUrl?: string;
 }

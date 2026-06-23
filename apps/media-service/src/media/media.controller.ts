@@ -11,6 +11,8 @@ import {
 import { MediaService } from './media.service';
 import { UploadUrlDto } from './dto/upload-url.dto';
 import { ConfirmUploadDto } from './dto/confirm-upload.dto';
+import { CoverUrlDto } from './dto/cover-url.dto';
+import { AvatarUrlDto } from './dto/avatar-url.dto';
 
 @Controller('media')
 export class MediaController {
@@ -19,6 +21,16 @@ export class MediaController {
   @Post('upload-url')
   createUploadUrl(@Body() dto: UploadUrlDto) {
     return this.mediaService.createUploadUrl(dto);
+  }
+
+  @Post('cover-url')
+  createCoverUploadUrl(@Body() dto: CoverUrlDto) {
+    return this.mediaService.createCoverUploadUrl(dto);
+  }
+
+  @Post('avatar-url')
+  createAvatarUploadUrl(@Body() dto: AvatarUrlDto) {
+    return this.mediaService.createAvatarUploadUrl(dto);
   }
 
   @Post('confirm-upload')

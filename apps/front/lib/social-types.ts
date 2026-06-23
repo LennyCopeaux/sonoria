@@ -58,6 +58,15 @@ export interface CreateTrackResponse {
   s3Key: string;
 }
 
+export interface Profile {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  avatarUrl: string | null;
+  artist: { slug: string; bio: string | null } | null;
+}
+
 export interface ConfirmUploadResponse {
   status: "queued";
 }

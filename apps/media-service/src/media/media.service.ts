@@ -9,6 +9,8 @@ import { RedisService } from '../redis/redis.service';
 import { QueueService } from '../queue/queue.service';
 import { UploadUrlDto } from './dto/upload-url.dto';
 import { ConfirmUploadDto } from './dto/confirm-upload.dto';
+import { CoverUrlDto } from './dto/cover-url.dto';
+import { AvatarUrlDto } from './dto/avatar-url.dto';
 
 const STREAM_CACHE_TTL = 3300;
 const STREAM_URL_TTL = 3600;
@@ -32,6 +34,30 @@ export class MediaService {
       UPLOAD_URL_TTL,
     );
     return { uploadUrl, key };
+  }
+
+  async createCoverUploadUrl(
+    dto: CoverUrlDto,
+  ): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {
+    const key = this.s3.buildCoverKey(dto.trackId, dto.filename);
+    const uploadUrl = await this.s3.createPresignedPutUrl(
+      key,
+      dto.mimeType,
+      UPLOAD_URL_TTL,
+    );
+    return { uploadUrl, key, publicUrl: this.s3.publicUrl(key) };
+  }
+
+  async createAvatarUploadUrl(
+    dto: AvatarUrlDto,
+  ): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {
+    const key = this.s3.buildAvatarKey(dto.userId, dto.filename);
+    const uploadUrl = await this.s3.createPresignedPutUrl(
+      key,
+      dto.mimeType,
+      UPLOAD_URL_TTL,
+    );
+    return { uploadUrl, key, publicUrl: this.s3.publicUrl(key) };
   }
 
   async confirmUpload(dto: ConfirmUploadDto): Promise<{ status: 'queued' }> {

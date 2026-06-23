@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Heart, Music, Play } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
 import { fetchApi } from "@/lib/api";
+import { coverGradient } from "@/lib/cover";
 import { fetchTrackForPlayback, PlaybackError } from "@/lib/playTrack";
 import type { LikeResponse, Track } from "@/lib/social-types";
 import { usePlayerStore } from "@/store/player";
@@ -22,6 +24,8 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
   const [playError, setPlayError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
 
+  const cover = track.coverUrl ?? track.pochetteUrl ?? null;
+
   useEffect(() => {
     setLikeCount(track.likeCount ?? 0);
     setLiked(track.likedByMe ?? false);
@@ -30,9 +34,10 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
   const handleLike = async () => {
     setLoading(true);
     try {
-      const res = await fetchApi<LikeResponse>(`/social/tracks/${track.id}/like`, {
-        method: liked ? "DELETE" : "POST",
-      });
+      const res = await fetchApi<LikeResponse>(
+        `/social/tracks/${track.id}/like`,
+        { method: liked ? "DELETE" : "POST" },
+      );
       setLiked(res.liked);
       setLikeCount(res.count);
     } catch {
@@ -60,46 +65,72 @@ export function TrackCard({ track, artistName = "Artiste" }: TrackCardProps) {
   };
 
   return (
-    <article className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition-colors hover:border-zinc-700">
-      <div className="flex h-32 items-center justify-center rounded-lg bg-zinc-800 text-3xl text-zinc-600">
-        {track.pochetteUrl || track.coverUrl ? "🎵" : "♪"}
+    <article className="group flex flex-col gap-3">
+      <div className="relative aspect-square overflow-hidden rounded-2xl ring-1 ring-line/60">
+        {cover ? (
+          <Image
+            src={cover}
+            alt={track.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            unoptimized
+          />
+        ) : (
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{ backgroundImage: coverGradient(track.id) }}
+          >
+            <Music className="h-10 w-10 text-white/70" />
+          </div>
+        )}
+
+        {/* dark overlay on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+
+        {/* like button */}
+        <button
+          type="button"
+          onClick={() => void handleLike()}
+          disabled={loading}
+          aria-label={liked ? "Retirer des favoris" : "Ajouter aux favoris"}
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60"
+        >
+          <Heart
+            className={`h-4 w-4 ${liked ? "fill-primary text-primary" : ""}`}
+          />
+        </button>
+
+        {/* play button */}
+        <button
+          type="button"
+          onClick={() => void handlePlay()}
+          disabled={playing}
+          aria-label="Lire"
+          className="absolute bottom-3 right-3 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-lg shadow-primary/30 transition-all duration-200 hover:bg-primary-soft group-hover:translate-y-0 group-hover:opacity-100"
+        >
+          <Play className="h-5 w-5 translate-x-px fill-current" />
+        </button>
       </div>
 
-      <div>
+      <div className="min-w-0">
         <Link
           href={`/track/${track.id}`}
-          className="font-semibold text-white hover:text-primary"
+          className="block truncate text-sm font-semibold text-white hover:text-primary"
         >
           {track.title}
         </Link>
-        <p className="text-sm text-zinc-400">
-          {artistName} · {track.playCount} écoutes
+        <p className="truncate text-xs text-muted">
+          {artistName}
           {track.genre ? ` · ${track.genre}` : ""}
         </p>
-      </div>
-
-      {playError ? (
-        <p className="text-xs text-red-400">{playError}</p>
-      ) : null}
-
-      <div className="mt-auto flex gap-2">
-        <Button
-          variant="secondary"
-          className="flex-1"
-          onClick={() => void handlePlay()}
-          disabled={playing}
-        >
-          {playing ? "…" : "Écouter"}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => void handleLike()}
-          disabled={loading}
-          title="Like"
-        >
-          {liked ? "♥" : "♡"}
-          {likeCount > 0 ? ` ${likeCount}` : ""}
-        </Button>
+        {playError ? (
+          <p className="mt-1 text-xs text-primary-soft">{playError}</p>
+        ) : (
+          <p className="mt-0.5 text-xs text-muted-2">
+            {track.playCount} écoutes
+            {likeCount > 0 ? ` · ${likeCount} j'aime` : ""}
+          </p>
+        )}
       </div>
     </article>
   );

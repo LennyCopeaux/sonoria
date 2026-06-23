@@ -166,6 +166,7 @@ services:
       PORT: 3002
       REDIS_URL: redis://redis:6379
       S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
       GATEWAY_URL: http://gateway:3010
       MEDIA_SERVICE_INTERNAL_URL: http://media-service:3002
     ports:
@@ -207,6 +208,8 @@ services:
     build:
       context: .
       dockerfile: ./apps/front/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3010
     container_name: sonoria-front
     env_file:
       - ./apps/front/.env

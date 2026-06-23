@@ -4,6 +4,9 @@ WORKDIR /app
 
 FROM base AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* vars are inlined at build time, so they must be set before `next build`.
+ARG NEXT_PUBLIC_API_URL=http://localhost:3010
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @sonoria/schemas build \

@@ -5,22 +5,28 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-export function Input({ label, error, className = "", id, ...props }: InputProps) {
+export function Input({
+  label,
+  error,
+  className = "",
+  id,
+  ...props
+}: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
     <div className="flex flex-col gap-1.5">
       {label ? (
-        <label htmlFor={inputId} className="text-sm font-medium text-zinc-300">
+        <label htmlFor={inputId} className="text-sm font-medium text-muted">
           {label}
         </label>
       ) : null}
       <input
         id={inputId}
-        className={`rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${className}`}
+        className={`h-11 rounded-xl border border-line bg-surface-2 px-4 text-sm text-white placeholder:text-muted-2 transition-colors focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 ${className}`}
         {...props}
       />
-      {error ? <p className="text-xs text-red-400">{error}</p> : null}
+      {error ? <p className="text-xs text-primary-soft">{error}</p> : null}
     </div>
   );
 }
