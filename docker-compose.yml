@@ -22,8 +22,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: sonoria-redis
+    # Activer la persistance AOF pour que les refresh tokens (et donc les
+    # sessions) survivent à un `docker compose down`.
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6380:6379"  # 6380 côté host pour éviter conflit avec un autre Redis local (ex. la-pioche)
+    volumes:
+      - redis_data:/data
     networks:
       - sonoria
     healthcheck:
@@ -229,3 +234,4 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  redis_data:

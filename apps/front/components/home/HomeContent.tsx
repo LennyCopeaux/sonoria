@@ -28,7 +28,10 @@ function Hero({ track }: { track: Track }) {
 
   const handlePlay = async () => {
     try {
-      const playerTrack = await fetchTrackForPlayback(track.id, "Artiste");
+      const playerTrack = await fetchTrackForPlayback(
+        track.id,
+        track.artistName ?? "Artiste",
+      );
       play(playerTrack);
     } catch {
       // ignore — surfaced elsewhere
@@ -178,8 +181,13 @@ export function HomeContent() {
         <h2 className="mb-4 text-xl font-bold text-white">Titres populaires</h2>
         {visibleTracks.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {visibleTracks.map((track) => (
-              <TrackCard key={track.id} track={track} />
+            {visibleTracks.map((track, i) => (
+              <TrackCard
+                key={track.id}
+                track={track}
+                queue={visibleTracks}
+                index={i}
+              />
             ))}
           </div>
         ) : (

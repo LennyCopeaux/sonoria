@@ -59,8 +59,13 @@ export function SearchContent() {
             <h2 className="mb-4 text-lg font-semibold text-white">Titres</h2>
             {results.tracks.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {results.tracks.map((track) => (
-                  <TrackCard key={track.id} track={track} />
+                {results.tracks.map((track, i) => (
+                  <TrackCard
+                    key={track.id}
+                    track={track}
+                    queue={results.tracks}
+                    index={i}
+                  />
                 ))}
               </div>
             ) : (

@@ -9,6 +9,22 @@ export class PlaybackError extends Error {
   }
 }
 
+/**
+ * Lightweight PlayerTrack built from a list item, WITHOUT a stream URL.
+ * Used to seed the player queue so next/prev can navigate a list; the player
+ * resolves each track's stream URL lazily when it becomes current.
+ */
+export function toPlayerTrackLite(track: Track): PlayerTrack {
+  return {
+    id: track.id,
+    title: track.title,
+    artist: track.artistName ?? "Artiste",
+    coverUrl: track.pochetteUrl ?? track.coverUrl ?? undefined,
+    durationS: track.duration ?? undefined,
+    likedByMe: track.likedByMe,
+  };
+}
+
 export async function fetchTrackForPlayback(
   trackId: string,
   artistName = "Artiste",
@@ -30,9 +46,10 @@ export async function fetchTrackForPlayback(
   return {
     id: track.id,
     title: track.title,
-    artist: artistName,
+    artist: track.artistName ?? artistName,
     coverUrl: track.pochetteUrl ?? track.coverUrl ?? undefined,
     streamUrl: track.streamUrl,
     durationS: track.duration ?? undefined,
+    likedByMe: track.likedByMe ?? false,
   };
 }

@@ -103,9 +103,16 @@ export async function fetchApi<T>(
     throw new ApiError(message, response.status);
   }
 
+  // 204, ou réponse au corps vide (ex. DELETE qui renvoie 200 sans body) :
+  // on évite un JSON.parse sur une chaîne vide qui lèverait une exception.
   if (response.status === 204) {
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }

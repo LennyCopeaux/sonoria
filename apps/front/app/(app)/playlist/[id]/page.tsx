@@ -49,8 +49,13 @@ export default function PlaylistPage() {
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {playlist.tracks.map(({ track }) => (
-          <TrackCard key={track.id} track={track} />
+        {playlist.tracks.map(({ track }, i) => (
+          <TrackCard
+            key={track.id}
+            track={track}
+            queue={playlist.tracks.map((t) => t.track)}
+            index={i}
+          />
         ))}
       </div>
       {playlist.tracks.length === 0 ? (

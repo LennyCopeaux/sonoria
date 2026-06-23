@@ -25,3 +25,10 @@ export function coverGradient(seed: string): string {
   const [from, to] = palette;
   return `linear-gradient(135deg, ${from} 0%, ${to} 100%)`;
 }
+
+// Solid accent colour (the palette's lead tone) — used for small markers
+// like the coloured dots next to playlists in the sidebar.
+export function coverColor(seed: string): string {
+  const palette = PALETTES[hash(seed) % PALETTES.length] ?? PALETTES[0]!;
+  return palette[0];
+}

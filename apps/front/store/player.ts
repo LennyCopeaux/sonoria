@@ -5,8 +5,11 @@ export interface PlayerTrack {
   title: string;
   artist: string;
   coverUrl?: string;
-  streamUrl: string;
+  // Optional: queued tracks start without a stream URL; the player resolves it
+  // on demand when the track becomes current (so next/prev work on a list).
+  streamUrl?: string;
   durationS?: number;
+  likedByMe?: boolean;
 }
 
 export type RepeatMode = "off" | "all" | "one";
