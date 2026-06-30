@@ -11,19 +11,24 @@
   },
   "dependencies": {
     "@sonoria/schemas": "workspace:*",
-    "@sonoria/ui": "workspace:*",
     "@sonoria/utils": "workspace:*",
+    "js-cookie": "^3.0.5",
+    "lucide-react": "^1.21.0",
     "next": "16.2.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^3.23.8",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@sonoria/eslint": "workspace:*",
     "@sonoria/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "^4",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",

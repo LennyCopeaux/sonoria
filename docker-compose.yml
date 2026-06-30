@@ -1,45 +1,225 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sonoria-postgres
+    environment:
+      POSTGRES_DB: sonoria
+      POSTGRES_USER: sonoria
+      POSTGRES_PASSWORD: sonoria
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - sonoria
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonoria -d sonoria"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: sonoria-redis
+    # Activer la persistance AOF pour que les refresh tokens (et donc les
+    # sessions) survivent à un `docker compose down`.
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"  # 6380 côté host pour éviter conflit avec un autre Redis local (ex. la-pioche)
+    volumes:
+      - redis_data:/data
+    networks:
+      - sonoria
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    container_name: sonoria-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3002,http://localhost:3010"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - sonoria
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc
+    container_name: sonoria-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - sonoria
+    entrypoint: >
+      /bin/sh -c "
+        until mc alias set local http://minio:9000 minioadmin minioadmin; do
+          echo 'waiting for minio...'; sleep 2;
+        done;
+        mc mb local/sonoria-audio --ignore-existing;
+        mc anonymous set download local/sonoria-audio || true;
+        echo 'minio bootstrap complete';
+      "
+    restart: "no"
+
   gateway:
     build:
       context: .
-      args:
-        APP: gateway
+      dockerfile: ./apps/gateway/Dockerfile
     container_name: sonoria-gateway
+    env_file:
+      - ./apps/gateway/.env
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      USERS_SERVICE_URL: http://users:3001
+      PORT: 3010
+      REDIS_URL: redis://redis:6379
     ports:
-      - "3000:3000"
+      - "3010:3010"
     depends_on:
-      - users
+      redis:
+        condition: service_healthy
     networks:
       - sonoria
 
-  users:
+  user-service:
     build:
       context: .
-      args:
-        APP: users
-    container_name: sonoria-users
+      dockerfile: ./apps/user-service/Dockerfile
+    container_name: sonoria-user-service
+    env_file:
+      - ./apps/user-service/.env
     environment:
-      NODE_ENV: production
       PORT: 3001
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      REDIS_URL: redis://redis:6379
+      GATEWAY_URL: http://gateway:3010
+      USER_SERVICE_INTERNAL_URL: http://user-service:3001
+      MEDIA_SERVICE_URL: http://media-service:3002
+      JOB_QUEUE_NAME: media-processing
     ports:
       - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sonoria
+
+  social-service:
+    build:
+      context: .
+      dockerfile: ./apps/social-service/Dockerfile
+    container_name: sonoria-social-service
+    env_file:
+      - ./apps/social-service/.env
+    environment:
+      PORT: 3005
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      GATEWAY_URL: http://gateway:3010
+      SOCIAL_SERVICE_INTERNAL_URL: http://social-service:3005
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sonoria
+
+  playlist-service:
+    build:
+      context: .
+      dockerfile: ./apps/playlist-service/Dockerfile
+    container_name: sonoria-playlist-service
+    env_file:
+      - ./apps/playlist-service/.env
+    environment:
+      PORT: 3006
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      GATEWAY_URL: http://gateway:3010
+      PLAYLIST_SERVICE_INTERNAL_URL: http://playlist-service:3006
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sonoria
+
+  media-service:
+    build:
+      context: .
+      dockerfile: ./apps/media-service/Dockerfile
+    container_name: sonoria-media-service
+    env_file:
+      - ./apps/media-service/.env
+    environment:
+      PORT: 3002
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      GATEWAY_URL: http://gateway:3010
+      MEDIA_SERVICE_INTERNAL_URL: http://media-service:3002
+    ports:
+      - "3004:3002"
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - sonoria
+
+  job-runner:
+    build:
+      context: .
+      dockerfile: ./apps/job-runner/Dockerfile
+    container_name: sonoria-job-runner
+    env_file:
+      - ./apps/job-runner/.env
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://sonoria:sonoria@postgres:5432/sonoria
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      USER_SERVICE_URL: http://user-service:3001
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     networks:
       - sonoria
 
   front:
     build:
       context: .
+      dockerfile: ./apps/front/Dockerfile
       args:
-        APP: front
+        NEXT_PUBLIC_API_URL: http://localhost:3010
     container_name: sonoria-front
+    env_file:
+      - ./apps/front/.env
     environment:
-      NODE_ENV: production
       PORT: 3002
-      NEXT_PUBLIC_API_URL: http://localhost:3000
     ports:
       - "3002:3002"
     depends_on:
@@ -50,3 +230,8 @@ services:
 networks:
   sonoria:
     driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+  redis_data:
