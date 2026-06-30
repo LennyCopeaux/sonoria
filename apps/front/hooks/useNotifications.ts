@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/hooks/useAuth";
 import { fetchApi } from "@/lib/api";
-import { isLoggedIn } from "@/lib/auth";
 
 export interface NotificationItem {
   id: string;
@@ -22,11 +22,12 @@ interface NotificationsResponse {
 }
 
 export function useNotifications() {
+  const { isLoggedIn, isReady } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
-    if (!isLoggedIn()) return;
+    if (!isReady || !isLoggedIn) return;
 
     let cancelled = false;
 
@@ -56,7 +57,7 @@ export function useNotifications() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [isReady, isLoggedIn]);
 
   return { unreadCount, notifications };
 }

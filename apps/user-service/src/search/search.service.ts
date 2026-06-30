@@ -4,21 +4,26 @@ import { PrismaService } from '../prisma/prisma.service';
 import { resolvePagination, totalPages } from '@sonoria/utils';
 import { toPaginationParams } from '../common/pagination';
 
+export interface SearchTrackResult {
+  id: string;
+  title: string;
+  slug: string;
+  genre: string | null;
+  coverUrl: string | null;
+  playCount: number;
+  artistName: string | null;
+}
+
+export interface SearchArtistResult {
+  id: string;
+  slug: string;
+  name: string;
+  avatarUrl: string | null;
+}
+
 export interface SearchResult {
-  tracks: Array<{
-    id: string;
-    title: string;
-    slug: string;
-    genre: string | null;
-    coverUrl: string | null;
-    playCount: number;
-  }>;
-  artists: Array<{
-    id: string;
-    slug: string;
-    name: string;
-    avatarUrl: string | null;
-  }>;
+  tracks: SearchTrackResult[];
+  artists: SearchArtistResult[];
   total: number;
   page: number;
   limit: number;
@@ -31,46 +36,121 @@ export class SearchService {
 
   async search(
     q: string,
-    type: 'track' | 'artist' = 'track',
+    type: 'track' | 'artist' | 'all' = 'track',
     page?: number,
     limit?: number,
   ): Promise<SearchResult> {
+    const term = q.trim();
     const pagination = resolvePagination(toPaginationParams(page, limit));
-    const pattern = `%${q.trim()}%`;
 
-    if (type === 'track') {
-      const where = {
-        status: TrackStatus.READY,
-        title: { contains: q.trim(), mode: 'insensitive' as const },
-      };
+    if (type === 'artist') {
+      return this.searchArtists(term, pagination);
+    }
 
-      const [tracks, total] = await Promise.all([
-        this.prisma.track.findMany({
-          where,
-          skip: pagination.offset,
-          take: pagination.limit,
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            genre: true,
-            coverUrl: true,
-            playCount: true,
-          },
-        }),
-        this.prisma.track.count({ where }),
+    if (type === 'all') {
+      const [tracks, artists] = await Promise.all([
+        this.fetchTracks(term, pagination),
+        this.fetchArtists(term, pagination),
       ]);
 
       return {
-        tracks,
-        artists: [],
-        total,
+        tracks: tracks.items,
+        artists: artists.items,
+        total: tracks.total + artists.total,
         page: pagination.page,
         limit: pagination.limit,
-        totalPages: totalPages(total, pagination.limit),
+        totalPages: totalPages(
+          tracks.total + artists.total,
+          pagination.limit,
+        ),
       };
     }
+
+    return this.searchTracks(term, pagination);
+  }
+
+  private async searchTracks(
+    term: string,
+    pagination: ReturnType<typeof resolvePagination>,
+  ): Promise<SearchResult> {
+    const { items, total } = await this.fetchTracks(term, pagination);
+
+    return {
+      tracks: items,
+      artists: [],
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: totalPages(total, pagination.limit),
+    };
+  }
+
+  private async searchArtists(
+    term: string,
+    pagination: ReturnType<typeof resolvePagination>,
+  ): Promise<SearchResult> {
+    const { items, total } = await this.fetchArtists(term, pagination);
+
+    return {
+      tracks: [],
+      artists: items,
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: totalPages(total, pagination.limit),
+    };
+  }
+
+  private async fetchTracks(
+    term: string,
+    pagination: ReturnType<typeof resolvePagination>,
+  ) {
+    const where = {
+      status: TrackStatus.READY,
+      OR: [
+        { title: { contains: term, mode: 'insensitive' as const } },
+        { uploader: { name: { contains: term, mode: 'insensitive' as const } } },
+      ],
+    };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.track.findMany({
+        where,
+        skip: pagination.offset,
+        take: pagination.limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          genre: true,
+          coverUrl: true,
+          playCount: true,
+          uploader: { select: { name: true } },
+        },
+      }),
+      this.prisma.track.count({ where }),
+    ]);
+
+    return {
+      items: rows.map((track) => ({
+        id: track.id,
+        title: track.title,
+        slug: track.slug,
+        genre: track.genre,
+        coverUrl: track.coverUrl,
+        playCount: track.playCount,
+        artistName: track.uploader?.name ?? null,
+      })),
+      total,
+    };
+  }
+
+  private async fetchArtists(
+    term: string,
+    pagination: ReturnType<typeof resolvePagination>,
+  ) {
+    const pattern = `%${term}%`;
 
     const artistRows = await this.prisma.$queryRaw<
       Array<{
@@ -96,15 +176,9 @@ export class SearchService {
       WHERE u.name ILIKE ${pattern} OR ap.slug ILIKE ${pattern}
     `;
 
-    const total = Number(countRows[0]?.count ?? 0);
-
     return {
-      tracks: [],
-      artists: artistRows,
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-      totalPages: totalPages(total, pagination.limit),
+      items: artistRows,
+      total: Number(countRows[0]?.count ?? 0),
     };
   }
 }

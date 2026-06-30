@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Heart, Music, Play } from "lucide-react";
 
 import { AddToPlaylistMenu } from "@/components/playlist/AddToPlaylistMenu";
+import { usePlayCount } from "@/hooks/usePlayCount";
 import { fetchApi } from "@/lib/api";
 import { coverGradient } from "@/lib/cover";
 import {
@@ -39,6 +40,7 @@ export function TrackCard({
   const [loading, setLoading] = useState(false);
   const [playError, setPlayError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  const playCount = usePlayCount(track.id, track.playCount ?? 0);
 
   const cover = track.coverUrl ?? track.pochetteUrl ?? null;
 
@@ -155,7 +157,7 @@ export function TrackCard({
           <p className="mt-1 text-xs text-primary-soft">{playError}</p>
         ) : (
           <p className="mt-0.5 text-xs text-muted-2">
-            {track.playCount} écoutes
+            {playCount} écoutes
             {likeCount > 0 ? ` · ${likeCount} j'aime` : ""}
           </p>
         )}

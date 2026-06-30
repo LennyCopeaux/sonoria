@@ -29,7 +29,7 @@ export function SearchContent() {
     const timer = window.setTimeout(() => {
       setLoading(true);
       void fetchApi<SearchResponse>(
-        `/search?q=${encodeURIComponent(q)}&type=track`,
+        `/search?q=${encodeURIComponent(q)}&type=all`,
       )
         .then(setResults)
         .catch(() => setResults({ tracks: [], artists: [], total: 0 }))

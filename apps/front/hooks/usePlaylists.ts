@@ -2,16 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { useAuth } from "@/hooks/useAuth";
 import { fetchApi } from "@/lib/api";
-import { decodeToken, getAccessToken, isLoggedIn } from "@/lib/auth";
+import { decodeToken, getAccessToken } from "@/lib/auth";
 import type { PaginatedPlaylists, PlaylistSummary } from "@/lib/social-types";
 
 export function usePlaylists() {
+  const { isLoggedIn, isReady } = useAuth();
   const [playlists, setPlaylists] = useState<PlaylistSummary[]>([]);
 
   const refresh = useCallback(async () => {
     const token = getAccessToken();
-    if (!isLoggedIn() || !token) {
+    if (!isLoggedIn || !token) {
       setPlaylists([]);
       return;
     }
@@ -25,11 +27,12 @@ export function usePlaylists() {
     } catch {
       setPlaylists([]);
     }
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
+    if (!isReady) return;
     void refresh();
-  }, [refresh]);
+  }, [isReady, refresh]);
 
   return { playlists, refresh };
 }

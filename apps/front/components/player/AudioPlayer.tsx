@@ -17,7 +17,7 @@ import {
 
 import { AddToPlaylistMenu } from "@/components/playlist/AddToPlaylistMenu";
 import { fetchApi } from "@/lib/api";
-import { fetchTrackForPlayback, PlaybackError } from "@/lib/playTrack";
+import { fetchTrackForPlayback, PlaybackError, recordTrackPlay } from "@/lib/playTrack";
 import type { LikeResponse } from "@/lib/social-types";
 import { usePlayerStore } from "@/store/player";
 
@@ -30,6 +30,7 @@ function formatTime(seconds: number): string {
 
 export function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const recordedTrackRef = useRef<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
@@ -154,6 +155,21 @@ export function AudioPlayer() {
       audio.removeEventListener("error", handleError);
     };
   }, [next, pause]);
+
+  // Comptabilise une écoute quand la lecture démarre réellement (une fois par titre).
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
+
+    const handlePlaying = () => {
+      if (recordedTrackRef.current === currentTrack.id) return;
+      recordedTrackRef.current = currentTrack.id;
+      void recordTrackPlay(currentTrack.id);
+    };
+
+    audio.addEventListener("playing", handlePlaying);
+    return () => audio.removeEventListener("playing", handlePlaying);
+  }, [currentTrack]);
 
   // Sync the heart with the like state carried by the current track.
   useEffect(() => {

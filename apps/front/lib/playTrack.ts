@@ -2,6 +2,13 @@ import { fetchApi } from "@/lib/api";
 import type { Track } from "@/lib/social-types";
 import type { PlayerTrack } from "@/store/player";
 
+export const PLAY_RECORDED_EVENT = "sonoria:play-recorded";
+
+export interface PlayRecordedDetail {
+  trackId: string;
+  playCount: number;
+}
+
 export class PlaybackError extends Error {
   constructor(message: string) {
     super(message);
@@ -52,4 +59,24 @@ export async function fetchTrackForPlayback(
     durationS: track.duration ?? undefined,
     likedByMe: track.likedByMe ?? false,
   };
+}
+
+/** Enregistre une écoute côté API (incrémente playCount + historique). */
+export async function recordTrackPlay(trackId: string): Promise<number | null> {
+  try {
+    const data = await fetchApi<{ playCount: number }>(`/tracks/${trackId}/play`, {
+      method: "POST",
+      authRedirect: false,
+    });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent<PlayRecordedDetail>(PLAY_RECORDED_EVENT, {
+          detail: { trackId, playCount: data.playCount },
+        }),
+      );
+    }
+    return data.playCount;
+  } catch {
+    return null;
+  }
 }

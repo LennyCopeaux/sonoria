@@ -45,6 +45,8 @@ export default function LoginPage() {
         authRedirect: false,
       });
       setAccessToken(data.access_token);
+      // Invalide le cache RSC (ex. prefetch de "/" sans cookie sur la page login).
+      router.refresh();
       router.replace("/library");
     } catch (err) {
       if (err instanceof ApiError) {

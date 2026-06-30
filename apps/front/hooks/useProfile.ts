@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { useAuth } from "@/hooks/useAuth";
 import { fetchApi } from "@/lib/api";
-import { isLoggedIn } from "@/lib/auth";
 import type { Profile } from "@/lib/social-types";
 
 export function useProfile() {
+  const { isLoggedIn, isReady } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!isLoggedIn()) {
+    if (!isReady || !isLoggedIn) {
       setProfile(null);
       setLoading(false);
       return;
@@ -24,7 +25,7 @@ export function useProfile() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isReady, isLoggedIn]);
 
   useEffect(() => {
     void refresh();

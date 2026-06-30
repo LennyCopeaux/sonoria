@@ -19,7 +19,7 @@ export default function AuthLayout({
           }}
         />
         <div className="relative z-10 flex flex-col justify-between p-12">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" prefetch={false} className="flex items-center gap-2">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/30">
               <Disc3 className="h-6 w-6" />
             </span>
@@ -61,6 +61,7 @@ export default function AuthLayout({
       <main className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-1/2">
         <Link
           href="/"
+          prefetch={false}
           className="mb-8 flex items-center gap-2 lg:hidden"
           aria-label="Accueil"
         >

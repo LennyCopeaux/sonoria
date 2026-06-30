@@ -11,7 +11,9 @@ import { CreateTrackForm } from "@/components/track/CreateTrackForm";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchApi } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth";
 import { coverGradient } from "@/lib/cover";
+import { PLAY_RECORDED_EVENT, type PlayRecordedDetail } from "@/lib/playTrack";
 import type { PaginatedTracks, Track } from "@/lib/social-types";
 
 const STATUS: Record<string, { label: string; className: string }> = {
@@ -63,6 +65,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isReady) return;
     if (!isLoggedIn) {
+      if (getAccessToken()) return;
       router.replace("/auth/login");
       return;
     }
@@ -72,6 +75,19 @@ export default function DashboardPage() {
     }
     void loadTracks();
   }, [isReady, isLoggedIn, role, router, loadTracks]);
+
+  useEffect(() => {
+    const onPlayRecorded = (event: Event) => {
+      const { trackId, playCount } = (event as CustomEvent<PlayRecordedDetail>)
+        .detail;
+      setTracks((prev) =>
+        prev.map((t) => (t.id === trackId ? { ...t, playCount } : t)),
+      );
+    };
+
+    window.addEventListener(PLAY_RECORDED_EVENT, onPlayRecorded);
+    return () => window.removeEventListener(PLAY_RECORDED_EVENT, onPlayRecorded);
+  }, []);
 
   const handleDelete = async (track: Track) => {
     if (!window.confirm(`Supprimer « ${track.title} » ?`)) return;

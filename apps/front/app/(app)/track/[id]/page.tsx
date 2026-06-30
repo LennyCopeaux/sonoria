@@ -10,6 +10,7 @@ import { CommentSection } from "@/components/comments/CommentSection";
 import { AddToPlaylist } from "@/components/playlist/AddToPlaylist";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
+import { usePlayCount } from "@/hooks/usePlayCount";
 import { fetchApi } from "@/lib/api";
 import { coverGradient } from "@/lib/cover";
 import { fetchTrackForPlayback, PlaybackError } from "@/lib/playTrack";
@@ -27,6 +28,7 @@ export default function TrackPage() {
   const [error, setError] = useState<string | null>(null);
   const [playError, setPlayError] = useState<string | null>(null);
   const [startingPlay, setStartingPlay] = useState(false);
+  const playCount = usePlayCount(trackId, track?.playCount ?? 0);
 
   const load = useCallback(async () => {
     try {
@@ -105,7 +107,7 @@ export default function TrackPage() {
         <div>
           <h1 className="text-4xl font-bold text-white">{track.title}</h1>
           <p className="mt-2 text-muted">
-            {track.genre ?? "Sans genre"} · {track.playCount} écoutes ·{" "}
+            {track.genre ?? "Sans genre"} · {playCount} écoutes ·{" "}
             {track.status}
           </p>
           {playError ? (

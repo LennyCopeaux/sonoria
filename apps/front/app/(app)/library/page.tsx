@@ -38,6 +38,7 @@ export default function LibraryPage() {
   useEffect(() => {
     if (!isReady) return;
     if (!isLoggedIn) {
+      if (getAccessToken()) return;
       router.replace("/auth/login");
       return;
     }

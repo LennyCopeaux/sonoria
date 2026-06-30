@@ -28,12 +28,12 @@ export function setAccessToken(token: string): void {
   // The cookie persists as a 7-day session marker (so the middleware keeps the
   // user in protected routes), while the JWT inside expires after ~15 min and
   // is silently renewed via the refresh token. Value is reset on each refresh.
-  Cookies.set(TOKEN_KEY, token, { expires: 7, sameSite: "lax" });
+  Cookies.set(TOKEN_KEY, token, { expires: 7, sameSite: "lax", path: "/" });
   notifyAuthChanged();
 }
 
 export function clearAccessToken(): void {
-  Cookies.remove(TOKEN_KEY);
+  Cookies.remove(TOKEN_KEY, { path: "/" });
   notifyAuthChanged();
 }
 

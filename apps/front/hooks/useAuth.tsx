@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { fetchApi, refreshSession } from "@/lib/api";
 import {
@@ -19,11 +26,22 @@ interface AuthState {
   role: string | null;
 }
 
+interface AuthContextValue {
+  user: JwtPayload | null;
+  isLoggedIn: boolean;
+  isReady: boolean;
+  role: string | null;
+  logout: () => Promise<void>;
+  refresh: () => void;
+}
+
 const loggedOutState: AuthState = {
   user: null,
   loggedIn: false,
   role: null,
 };
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 function readAuthState(): AuthState {
   const token = getAccessToken();
@@ -36,7 +54,7 @@ function readAuthState(): AuthState {
   };
 }
 
-export function useAuth() {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(loggedOutState);
   const [isReady, setIsReady] = useState(false);
 
@@ -50,7 +68,10 @@ export function useAuth() {
     // before settling the auth state (keeps the session alive across reloads).
     const token = getAccessToken();
     if (token && !isLoggedIn()) {
-      void refreshSession().then(() => refresh());
+      void refreshSession().then((ok) => {
+        if (!ok) clearAccessToken();
+        refresh();
+      });
     } else {
       refresh();
     }
@@ -70,12 +91,26 @@ export function useAuth() {
     window.location.href = "/auth/login";
   }, []);
 
-  return {
-    user: state.user,
-    isLoggedIn: state.loggedIn,
-    isReady,
-    role: state.role,
-    logout,
-    refresh,
-  };
+  return (
+    <AuthContext.Provider
+      value={{
+        user: state.user,
+        isLoggedIn: state.loggedIn,
+        isReady,
+        role: state.role,
+        logout,
+        refresh,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth(): AuthContextValue {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
 }

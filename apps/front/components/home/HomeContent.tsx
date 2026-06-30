@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Play } from "lucide-react";
 
@@ -80,14 +79,14 @@ function Hero({ track }: { track: Track }) {
 }
 
 export function HomeContent() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isReady } = useAuth();
   const [tracks, setTracks] = useState<PaginatedTracks | null>(null);
   const [playlists, setPlaylists] = useState<PaginatedPlaylists | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<string>(ALL);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isReady || !isLoggedIn) return;
 
     const load = async () => {
       try {
@@ -103,7 +102,7 @@ export function HomeContent() {
     };
 
     void load();
-  }, [isLoggedIn]);
+  }, [isReady, isLoggedIn]);
 
   const categories = useMemo(() => {
     const genres = new Set<string>();
@@ -119,24 +118,7 @@ export function HomeContent() {
     return tracks.items.filter((t) => t.genre === category);
   }, [tracks, category]);
 
-  if (!isLoggedIn) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-        <h1 className="text-2xl font-bold text-white">Bienvenue sur SONORIA</h1>
-        <p className="max-w-sm text-muted">
-          Connectez-vous pour découvrir les titres et playlists du moment.
-        </p>
-        <Link
-          href="/auth/login"
-          className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/25 transition-colors hover:bg-primary-soft"
-        >
-          Se connecter
-        </Link>
-      </div>
-    );
-  }
-
-  if (!tracks && !playlists && !error) {
+  if (!isReady || !isLoggedIn || (!tracks && !playlists && !error)) {
     return (
       <div className="flex justify-center p-16">
         <Spinner size="lg" />
@@ -191,7 +173,7 @@ export function HomeContent() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-2">Aucun titre dans cette catégorie.</p>
+          <p className="text-sm text-muted-2">Aucun titre pour le moment.</p>
         )}
       </section>
 

@@ -11,8 +11,8 @@ class SearchQueryDto {
   q!: string;
 
   @IsOptional()
-  @IsEnum(['track', 'artist'])
-  type?: 'track' | 'artist';
+  @IsEnum(['track', 'artist', 'all'])
+  type?: 'track' | 'artist' | 'all';
 
   @IsOptional()
   @Type(() => Number)
